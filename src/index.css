@@ -2,41 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Futuristic AI Platform Design System */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
+    /* Futuristic Color Palette */
+    --background: 220 27% 4%;
+    --foreground: 210 40% 98%;
+    
+    --card: 220 27% 6%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 220 27% 6%;
+    --popover-foreground: 210 40% 98%;
+    
+    --primary: 195 100% 50%;
+    --primary-foreground: 220 27% 4%;
+    
+    --secondary: 263 70% 65%;
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 220 27% 8%;
+    --muted-foreground: 217 10% 65%;
+    
+    --accent: 183 100% 50%;
+    --accent-foreground: 220 27% 4%;
+    
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    
+    --border: 220 27% 12%;
+    --input: 220 27% 10%;
+    --ring: 195 100% 50%;
+    
+    --radius: 0.75rem;
+    
+    /* Neon Colors */
+    --neon-blue: 195 100% 50%;
+    --neon-purple: 263 70% 65%;
+    --neon-cyan: 183 100% 50%;
+    --neon-pink: 316 100% 75%;
+    
+    /* Glassmorphism */
+    --glass-bg: 220 27% 8% / 0.1;
+    --glass-border: 210 40% 98% / 0.1;
+    
+    /* Gradients */
+    --gradient-neon: linear-gradient(135deg, hsl(195 100% 50% / 0.8), hsl(263 70% 65% / 0.8), hsl(183 100% 50% / 0.8));
+    --gradient-hero: linear-gradient(180deg, hsl(220 27% 4%), hsl(220 27% 6%));
+    --gradient-card: linear-gradient(145deg, hsl(220 27% 6% / 0.5), hsl(220 27% 8% / 0.3));
+    
+    /* Shadows & Glows */
+    --glow-neon: 0 0 20px hsl(195 100% 50% / 0.5);
+    --glow-purple: 0 0 20px hsl(263 70% 65% / 0.5);
+    --glow-cyan: 0 0 20px hsl(183 100% 50% / 0.5);
+    --shadow-glass: 0 8px 32px hsl(220 27% 4% / 0.3);
+    
+    /* Animation Durations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +126,174 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-inter;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-orbitron {
+    font-family: 'Orbitron', monospace;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Neon Glow Effects */
+  .neon-glow {
+    box-shadow: var(--glow-neon);
+  }
+
+  .neon-glow-purple {
+    box-shadow: var(--glow-purple);
+  }
+
+  .neon-glow-cyan {
+    box-shadow: var(--glow-cyan);
+  }
+
+  /* Animated Background */
+  .animated-bg {
+    background: var(--gradient-hero);
+    background-size: 400% 400%;
+    animation: gradientShift 8s ease infinite;
+  }
+
+  /* Holographic Border Effect */
+  .holographic-border {
+    position: relative;
+    background: var(--gradient-card);
+    border-radius: var(--radius);
+  }
+
+  .holographic-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    background: var(--gradient-neon);
+    border-radius: inherit;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: xor;
+  }
+
+  /* Floating Animation */
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Pulse Glow Animation */
+  .pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite alternate;
+  }
+
+  /* Text Glow */
+  .text-glow {
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.8);
+  }
+
+  /* Interactive Hover Effects */
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-glass), var(--glow-neon);
+  }
+}
+
+@layer utilities {
+  /* Custom Keyframes */
+  @keyframes gradientShift {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes pulseGlow {
+    0% {
+      box-shadow: 0 0 5px hsl(var(--primary) / 0.5);
+    }
+    100% {
+      box-shadow: 0 0 20px hsl(var(--primary) / 0.8), 0 0 30px hsl(var(--primary) / 0.4);
+    }
+  }
+
+  @keyframes slideInFromLeft {
+    0% {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInFromRight {
+    0% {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeInUp {
+    0% {
+      transform: translateY(40px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    0% {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Animation Classes */
+  .animate-slide-in-left {
+    animation: slideInFromLeft 0.8s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInFromRight 0.8s ease-out;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.5s ease-out;
   }
 }
