@@ -191,6 +191,11 @@
     animation: pulseGlow 2s ease-in-out infinite alternate;
   }
 
+  /* Enhanced Pulse Glow for Listening State */
+  .listening-glow {
+    animation: listeningGlow 1.5s ease-in-out infinite alternate;
+  }
+
   /* Text Glow */
   .text-glow {
     text-shadow: 0 0 10px hsl(var(--primary) / 0.8);
@@ -233,6 +238,15 @@
     }
     100% {
       box-shadow: 0 0 20px hsl(var(--primary) / 0.8), 0 0 30px hsl(var(--primary) / 0.4);
+    }
+  }
+
+  @keyframes listeningGlow {
+    0% {
+      box-shadow: 0 0 20px hsl(var(--neon-cyan) / 0.6);
+    }
+    100% {
+      box-shadow: 0 0 40px hsl(var(--neon-cyan) / 1), 0 0 60px hsl(var(--neon-blue) / 0.8), 0 0 80px hsl(var(--neon-purple) / 0.6);
     }
   }
 

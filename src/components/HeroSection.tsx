@@ -4,14 +4,36 @@ import robotAvatar from '@/assets/robot-avatar.png';
 
 export const HeroSection = () => {
   const [isListening, setIsListening] = useState(false);
+  const [audioLevels, setAudioLevels] = useState([0.3, 0.7, 0.5, 0.9, 0.4, 0.8, 0.2]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setIsListening(prev => !prev);
-    }, 3000);
+    }, 4000);
     
     return () => clearInterval(interval);
   }, []);
+
+  // Simulate audio levels when listening
+  useEffect(() => {
+    let animationFrame: number;
+    
+    if (isListening) {
+      const animateAudio = () => {
+        setAudioLevels(prev => 
+          prev.map(() => Math.random() * 0.8 + 0.2)
+        );
+        animationFrame = requestAnimationFrame(animateAudio);
+      };
+      animateAudio();
+    }
+    
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [isListening]);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden animated-bg">
@@ -41,26 +63,78 @@ export const HeroSection = () => {
         {/* Robot Avatar */}
         <div className="relative mb-12 animate-scale-in" style={{ animationDelay: '0.3s' }}>
           <div className="relative inline-block">
+            {/* Outer Ripple Effects */}
+            {isListening && (
+              <>
+                <div className="absolute inset-0 rounded-full border-2 border-neon-cyan/30 animate-ping scale-150"></div>
+                <div className="absolute inset-0 rounded-full border-2 border-neon-blue/20 animate-ping scale-125" style={{ animationDelay: '0.5s' }}></div>
+                <div className="absolute inset-0 rounded-full border-2 border-neon-purple/15 animate-ping scale-175" style={{ animationDelay: '1s' }}></div>
+              </>
+            )}
+            
+            {/* Main Glow */}
             <div className={`absolute inset-0 rounded-full transition-all duration-1000 ${
-              isListening ? 'neon-glow-cyan scale-110' : 'neon-glow scale-100'
+              isListening 
+                ? 'shadow-[0_0_60px_hsl(var(--neon-cyan)/0.8),0_0_100px_hsl(var(--neon-blue)/0.6),0_0_140px_hsl(var(--neon-purple)/0.4)] scale-110' 
+                : 'neon-glow scale-100'
             }`}></div>
+            
+            {/* Robot Image */}
             <img 
               src={robotAvatar} 
               alt="AI Robot Companion" 
               className={`relative z-10 w-64 h-64 mx-auto float transition-all duration-1000 ${
-                isListening ? 'scale-110' : 'scale-100'
+                isListening ? 'scale-110 brightness-110' : 'scale-100'
               }`}
             />
             
-            {/* Listening Indicator */}
+            {/* Enhanced Listening Indicators */}
             {isListening && (
-              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-6 bg-neon-cyan rounded-full animate-pulse"></div>
-                  <div className="w-2 h-8 bg-neon-blue rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-6 bg-neon-purple rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+              <>
+                {/* Audio Wave Visualization */}
+                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
+                  <div className="flex items-end space-x-1">
+                    {audioLevels.map((level, index) => (
+                      <div
+                        key={index}
+                        className="bg-gradient-to-t from-neon-cyan via-neon-blue to-neon-purple rounded-full transition-all duration-100"
+                        style={{
+                          width: '4px',
+                          height: `${level * 40 + 10}px`,
+                          boxShadow: `0 0 10px hsl(var(--neon-cyan)/0.8)`
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+                
+                {/* Floating Particles */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-2 h-2 bg-neon-cyan rounded-full opacity-60 animate-float"
+                      style={{
+                        left: `${20 + (i * 10)}%`,
+                        top: `${30 + (i % 3) * 20}%`,
+                        animationDelay: `${i * 0.3}s`,
+                        animationDuration: `${3 + (i % 2)}s`,
+                        boxShadow: '0 0 6px currentColor'
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Status Text */}
+                <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center">
+                  <div className="flex items-center space-x-2 bg-black/20 backdrop-blur-sm rounded-full px-4 py-2 border border-neon-cyan/30">
+                    <div className="w-2 h-2 bg-neon-cyan rounded-full animate-pulse"></div>
+                    <span className="text-sm font-orbitron text-neon-cyan font-medium">
+                      AI is listening...
+                    </span>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
