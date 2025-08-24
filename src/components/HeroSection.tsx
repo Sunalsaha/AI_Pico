@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import robotAvatar from '@/assets/robot-avatar.png';
 
 export const HeroSection = () => {
   const [isListening, setIsListening] = useState(false);
@@ -11,6 +10,10 @@ export const HeroSection = () => {
   // NEW: Typing animation states
   const [typedText, setTypedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  
+  // Spline loading states
+  const [splineLoaded, setSplineLoaded] = useState(false);
+  const [splineError, setSplineError] = useState(false);
 
   const fullText = "Hello! I'm Pico. How can I assist you today?";
 
@@ -75,6 +78,15 @@ export const HeroSection = () => {
     };
   }, [isListening, isConversing]);
 
+  const onSplineLoad = () => {
+    setSplineLoaded(true);
+    setSplineError(false);
+  };
+
+  const onSplineError = () => {
+    setSplineError(true);
+  };
+
   return (
     <section 
       className={`fixed inset-0 w-screen h-screen flex items-center justify-center overflow-hidden animated-bg transition-all duration-1000 select-none cursor-none ${
@@ -105,7 +117,7 @@ export const HeroSection = () => {
         msUserSelect: 'none',
         cursor: 'none'
       }}>
-        {/* Background elements remain the same */}
+        {/* Background grid */}
         <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none"
              style={{
                backgroundImage: `
@@ -119,6 +131,7 @@ export const HeroSection = () => {
              }}>
         </div>
         
+        {/* Data streams */}
         <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none">
           {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 8 : 10)].map((_, i) => (
             <div
@@ -139,6 +152,7 @@ export const HeroSection = () => {
           ))}
         </div>
         
+        {/* Geometric shapes */}
         <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none">
           {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 3 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 4 : 6)].map((_, i) => (
             <div
@@ -166,6 +180,7 @@ export const HeroSection = () => {
           ))}
         </div>
 
+        {/* Matrix effect */}
         {(isListening || isConversing) && (
           <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none">
             {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 12 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 16 : 20)].map((_, i) => (
@@ -260,18 +275,20 @@ export const HeroSection = () => {
           </div>
         )}
 
-        {/* Robot Avatar Container - ANIMATION IN BACKGROUND ONLY */}
-        <div className={`relative mb-1 sm:mb-2 md:mb-3 overflow-hidden select-none ${
+        {/* Robot Avatar Container - BIGGER SIZE */}
+        <div className={`relative mb-1 sm:mb-2 md:mb-3 overflow-visible select-none ${
           isConversing ? 'scale-105' : titleHasBeenHidden ? 'scale-102' : 'scale-100'
         }`} style={{ 
+          width: '850px',
+          height: '800px',
           maxWidth: '95vw',
-          maxHeight: '65vh',
+          maxHeight: '70vh',
           transform: 'translateY(20px)',
           transformOrigin: 'center center',
           transition: 'transform 0.3s ease'
         }}>
           
-          {/* Animated Background Layer Behind Image */}
+          {/* Animated Background Layer Behind Spline Scene */}
           {(isListening || isConversing) && (
             <div 
               className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
@@ -341,37 +358,49 @@ export const HeroSection = () => {
             </div>
           )}
           
-          {/* COMPLETELY STATIC Robot Image */}
-          <div className="relative z-10">
-            <img 
-              src={robotAvatar} 
-              alt="Pico Robot Companion" 
-              draggable={false}
-              className="w-48 h-48 xs:w-56 xs:h-56 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 xl:w-[28rem] xl:h-[28rem] 2xl:w-[32rem] 2xl:h-[32rem] object-cover select-none pointer-events-none rounded-full"
-              style={{
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                MozUserSelect: 'none',
-                msUserSelect: 'none',
-                WebkitTouchCallout: 'none',
-                WebkitUserDrag: 'none',
-                maxWidth: '90vw',
-                maxHeight: '60vh',
-                cursor: 'none',
-                borderRadius: '50%',
-                border: 'none',
-                outline: 'none',
-                transform: 'none',
-                filter: 'none',
-                transition: 'none',
-                boxShadow: 'none'
-              }}
-            />
+          {/* Spline 3D Robot Scene with iframe - BIGGER */}
+          <div className="relative z-10 w-full h-full">
+            {!splineError ? (
+              <>
+                <iframe
+                  src="https://my.spline.design/genkubgreetingrobot-PWk9MxwXWbi6djM02Z2cOte5/"
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  style={{
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    borderRadius: '100%',
+                    overflow: 'hidden'
+                  }}
+                  title="Pico 3D Robot"
+                  onLoad={onSplineLoad}
+                  onError={onSplineError}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                />
+                
+                {/* Loading indicator */}
+                {!splineLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-transparent">
+                    <div className="text-neon-cyan font-orbitron text-sm animate-pulse">
+                      Loading Pico...
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Fallback when Spline fails to load - BIGGER */
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-96 h-96 rounded-full bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 border-2 border-neon-cyan/30 flex items-center justify-center backdrop-blur-sm">
+                  <span className="text-neon-cyan font-orbitron text-4xl font-bold animate-pulse">PICO</span>
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Audio Wave Visualization */}
           {(isListening || isConversing) && (
-            <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 transform -translate-x-1/2 overflow-hidden select-none pointer-events-none z-1" 
+            <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 transform -translate-x-1/2 overflow-hidden select-none pointer-events-none z-20" 
                  style={{ 
                    perspective: '200px',
                    maxWidth: '200px'
