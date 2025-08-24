@@ -6,45 +6,97 @@ export const SplashScreen = ({ onFinish }) => {
   const [showSubText, setShowSubText] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   
-  // NEW: Audio unlock state
+  // Enhanced audio states
   const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [audioSupported, setAudioSupported] = useState(false);
+  const [showAudioPrompt, setShowAudioPrompt] = useState(true);
 
   const mainText = "INITIALIZING PICO";
   const subText = "AI System Loading...";
 
-  // Fixed audio function
-  const playAudioSequence = async () => {
-    try {
-      // ✅ FIXED: Main startup sound
-      const startupAudio = new Audio('/sounds/ai-startup.mp3');
-      startupAudio.volume = 0.7; // Valid range 0.0-1.0
-      await startupAudio.play();
-      console.log('✅ Startup sound playing');
+  // Check audio support on mount
+  useEffect(() => {
+    const checkAudioSupport = () => {
+      try {
+        const audio = new Audio();
+        setAudioSupported(!!audio.canPlayType);
+      } catch (error) {
+        console.warn('Audio not supported:', error);
+        setAudioSupported(false);
+      }
+    };
+    
+    checkAudioSupport();
+  }, []);
 
-      // ✅ FIXED: Typing sound
+  // Enhanced audio function with preloading and better error handling
+  const playAudioSequence = async () => {
+    if (!audioSupported) {
+      console.warn('Audio not supported on this device');
+      return;
+    }
+
+    try {
+      // Preload all audio files
+      const audioFiles = {
+        startup: new Audio('./sounds/ai-startup.mp3'),
+        typing: new Audio('./public/sounds/typing.mp3'),
+        success: new Audio('./public/sounds/success.mp3')
+      };
+
+      // Set volumes
+      audioFiles.startup.volume = 100;
+      audioFiles.typing.volume = 100;
+      audioFiles.success.volume = 100;
+
+      // Preload all files
+      const preloadPromises = Object.values(audioFiles).map(audio => {
+        return new Promise((resolve) => {
+          audio.addEventListener('canplaythrough', resolve, { once: true });
+          audio.addEventListener('error', resolve, { once: true });
+          audio.load();
+        });
+      });
+
+      // Wait for all files to preload (with timeout)
+      await Promise.race([
+        Promise.all(preloadPromises),
+        new Promise(resolve => setTimeout(resolve, 2000)) // 2s timeout
+      ]);
+
+      console.log('Audio files preloaded');
+
+      // Play startup sound
+      try {
+        await audioFiles.startup.play();
+        console.log('✅ Startup sound playing');
+      } catch (error) {
+        console.warn('Startup audio failed:', error);
+      }
+
+      // Play typing sound after delay
       setTimeout(async () => {
         try {
-          const typingAudio = new Audio('/sounds/typing.mp3');
-          typingAudio.volume = 0.3; // ✅ FIXED: Was 100 (invalid), now 0.3
-          typingAudio.loop = true;
-          await typingAudio.play();
+          audioFiles.typing.loop = true;
+          await audioFiles.typing.play();
           console.log('✅ Typing sound playing');
           
+          // Stop typing sound after text is done
+          const typingDuration = mainText.length * 100 + 500;
           setTimeout(() => {
-            typingAudio.pause();
-            typingAudio.currentTime = 0;
-          }, mainText.length * 100 + 500);
+            audioFiles.typing.pause();
+            audioFiles.typing.currentTime = 0;
+            console.log('⏹️ Typing sound stopped');
+          }, typingDuration);
         } catch (error) {
           console.warn('Typing audio failed:', error);
         }
       }, 500);
 
-      // Success sound
+      // Play success sound
       setTimeout(async () => {
         try {
-          const successAudio = new Audio('/sounds/success.mp3');
-          successAudio.volume = 0.5;
-          await successAudio.play();
+          await audioFiles.success.play();
           console.log('✅ Success sound playing');
         } catch (error) {
           console.warn('Success audio failed:', error);
@@ -52,33 +104,53 @@ export const SplashScreen = ({ onFinish }) => {
       }, 3000);
 
     } catch (error) {
-      console.error('❌ Audio failed:', error);
+      console.error('❌ Audio sequence failed:', error);
     }
   };
 
-  // ✅ FIXED: Add user interaction to unlock audio
+  // Enhanced user interaction handler
   useEffect(() => {
-    const handleUserInteraction = async () => {
-      if (!audioUnlocked) {
+    const handleUserInteraction = async (event) => {
+      if (!audioUnlocked && audioSupported) {
+        console.log('🔓 Audio unlocked by:', event.type);
         setAudioUnlocked(true);
-        await playAudioSequence();
-        console.log('🔓 Audio unlocked and playing');
+        setShowAudioPrompt(false);
+        
+        // Small delay to ensure interaction is complete
+        setTimeout(() => {
+          playAudioSequence();
+        }, 100);
       }
     };
 
-    // Listen for any user interaction
-    document.addEventListener('click', handleUserInteraction, { once: true });
-    document.addEventListener('keydown', handleUserInteraction, { once: true });
-    document.addEventListener('touchstart', handleUserInteraction, { once: true });
+    // Add multiple interaction listeners
+    const events = ['click', 'keydown', 'touchstart', 'mousedown'];
+    events.forEach(eventType => {
+      document.addEventListener(eventType, handleUserInteraction, { 
+        once: true, 
+        passive: false 
+      });
+    });
 
+    // Cleanup
     return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
+      events.forEach(eventType => {
+        document.removeEventListener(eventType, handleUserInteraction);
+      });
     };
-  }, [audioUnlocked]);
+  }, [audioUnlocked, audioSupported]);
 
-  // Typing animation (unchanged)
+  // Auto-hide audio prompt after 5 seconds
+  useEffect(() => {
+    if (showAudioPrompt) {
+      const timer = setTimeout(() => {
+        setShowAudioPrompt(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showAudioPrompt]);
+
+  // Typing animation with better timing
   useEffect(() => {
     let currentIndex = 0;
     const typingInterval = setInterval(() => {
@@ -100,23 +172,38 @@ export const SplashScreen = ({ onFinish }) => {
     }, 100);
 
     return () => clearInterval(typingInterval);
-  }, []);
+  }, [mainText, onFinish]);
 
   if (!isVisible) return null;
 
   return (
     <>
-      {/* Small audio hint (fades after 3 seconds) */}
-      {!audioUnlocked && (
+      {/* Enhanced audio prompt */}
+      {showAudioPrompt && audioSupported && !audioUnlocked && (
         <div 
-          className="fixed top-4 right-4 z-[60] bg-cyan-400/20 text-cyan-400 px-3 py-1 rounded text-xs backdrop-blur-sm border border-cyan-400/30"
-          style={{ animation: 'fadeOut 3s ease-in-out forwards' }}
+          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60] bg-cyan-400/20 text-cyan-400 px-6 py-4 rounded-lg text-center backdrop-blur-sm border border-cyan-400/50 cursor-pointer hover:bg-cyan-400/30 transition-all duration-300"
+          onClick={() => {
+            setAudioUnlocked(true);
+            setShowAudioPrompt(false);
+            playAudioSequence();
+          }}
         >
-          🔊 Click for sound
+          <div className="text-lg mb-2">🔊</div>
+          <div className="text-sm font-semibold mb-1">Click to Enable Sound</div>
+          <div className="text-xs opacity-80">Tap anywhere to activate audio experience</div>
         </div>
       )}
 
-      {/* Your existing UI - COMPLETELY UNCHANGED */}
+      {/* Small corner hint that fades quickly */}
+      {!audioUnlocked && audioSupported && showAudioPrompt && (
+        <div 
+          className="fixed top-4 right-4 z-[55] bg-cyan-400/10 text-cyan-400/60 px-2 py-1 rounded text-xs backdrop-blur-sm border border-cyan-400/20 animate-pulse"
+        >
+          🎵 Click for audio
+        </div>
+      )}
+
+      {/* Main splash screen UI (unchanged) */}
       <div className={`fixed inset-0 z-50 flex items-center justify-center overflow-hidden transition-opacity duration-1000 select-none ${
         isExiting ? 'opacity-0' : 'opacity-100'
       }`}
@@ -124,7 +211,7 @@ export const SplashScreen = ({ onFinish }) => {
         background: 'linear-gradient(135deg, #000000 0%, #0a0a1a 50%, #000000 100%)'
       }}>
         
-        {/* All your existing visual elements stay exactly the same */}
+        {/* Background grid */}
         <div className="absolute inset-0 opacity-15 sm:opacity-20">
           <div className="absolute inset-0" 
                style={{
@@ -142,6 +229,7 @@ export const SplashScreen = ({ onFinish }) => {
           </div>
         </div>
 
+        {/* Matrix rain effect */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 8 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 10 : 12)].map((_, i) => (
             <div
@@ -162,6 +250,7 @@ export const SplashScreen = ({ onFinish }) => {
           ))}
         </div>
 
+        {/* Ripple circles */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative">
             {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 3 : 4)].map((_, i) => (
@@ -197,12 +286,13 @@ export const SplashScreen = ({ onFinish }) => {
           </div>
         </div>
 
+        {/* Main content */}
         <div className="relative z-10 text-center px-4 sm:px-6 md:px-8 w-full max-w-4xl mx-auto">
           <div className="mb-6 sm:mb-8 relative">
             <div className="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 mx-auto mb-3 sm:mb-4 relative">
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 opacity-80 animate-spin-slow"></div>
               <div className="absolute inset-1 sm:inset-2 rounded-full bg-black flex items-center justify-center">
-                
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-cyan-400 rounded-full animate-pulse"></div>
               </div>
             </div>
             
@@ -266,7 +356,7 @@ export const SplashScreen = ({ onFinish }) => {
         )}
       </div>
 
-      {/* All your existing CSS */}
+      {/* CSS Animations */}
       <style jsx>{`
         @keyframes gridPulse {
           0%, 100% { opacity: 0.15; }
@@ -328,12 +418,6 @@ export const SplashScreen = ({ onFinish }) => {
             opacity: 1;
             transform: translateY(0);
           }
-        }
-
-        @keyframes fadeOut {
-          0% { opacity: 1; }
-          70% { opacity: 1; }
-          100% { opacity: 0; }
         }
         
         .animate-spin-slow { animation: spin-slow 3s linear infinite; }
