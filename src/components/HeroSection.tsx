@@ -4,21 +4,61 @@ import robotAvatar from '@/assets/robot-avatar.png';
 
 export const HeroSection = () => {
   const [isListening, setIsListening] = useState(false);
+  const [isConversing, setIsConversing] = useState(false);
+  const [titleHasBeenHidden, setTitleHasBeenHidden] = useState(false);
   const [audioLevels, setAudioLevels] = useState([0.3, 0.7, 0.5, 0.9, 0.4, 0.8, 0.2]);
+  
+  // NEW: Typing animation states
+  const [typedText, setTypedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  const fullText = "Hello! I'm Pico. How can I assist you today?";
 
   useEffect(() => {
     const interval = setInterval(() => {
       setIsListening(prev => !prev);
+      
+      if (isListening) {
+        setTimeout(() => {
+          setIsConversing(true);
+          setTitleHasBeenHidden(true);
+          // Start typing animation
+          setIsTyping(true);
+          setTypedText('');
+          
+          setTimeout(() => {
+            setIsConversing(false);
+            setIsTyping(false);
+          }, 3000);
+        }, 1000);
+      }
     }, 4000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [isListening]);
 
-  // Simulate audio levels when listening
+  // NEW: Typing animation effect
+  useEffect(() => {
+    if (isTyping && isConversing) {
+      let currentIndex = 0;
+      const typingInterval = setInterval(() => {
+        if (currentIndex <= fullText.length) {
+          setTypedText(fullText.slice(0, currentIndex));
+          currentIndex++;
+        } else {
+          clearInterval(typingInterval);
+          setIsTyping(false);
+        }
+      }, 50); // Typing speed: 50ms per character
+
+      return () => clearInterval(typingInterval);
+    }
+  }, [isTyping, isConversing, fullText]);
+
   useEffect(() => {
     let animationFrame: number;
     
-    if (isListening) {
+    if (isListening || isConversing) {
       const animateAudio = () => {
         setAudioLevels(prev => 
           prev.map(() => Math.random() * 0.8 + 0.2)
@@ -33,239 +73,353 @@ export const HeroSection = () => {
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [isListening]);
+  }, [isListening, isConversing]);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden animated-bg">
-      {/* Ambient Background Elements - More Dynamic */}
-      <div className="absolute inset-0 opacity-20">
-        {/* Animated Grid Lines */}
-        <div className="absolute inset-0"
+    <section 
+      className={`fixed inset-0 w-screen h-screen flex items-center justify-center overflow-hidden animated-bg transition-all duration-1000 select-none cursor-none ${
+        isListening || isConversing 
+          ? 'brightness-110 contrast-110' 
+          : 'brightness-100'
+      }`} 
+      style={{ 
+        transformOrigin: 'center center',
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        MozUserSelect: 'none',
+        msUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        cursor: 'none'
+      }}
+    >
+      {/* Enhanced Ambient Background Elements - ANIMATED */}
+      <div className={`absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none transition-opacity duration-1000 ${
+        isListening || isConversing ? 'opacity-30 sm:opacity-40' : 'opacity-15 sm:opacity-20'
+      }`}
+      style={{
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        MozUserSelect: 'none',
+        msUserSelect: 'none',
+        cursor: 'none'
+      }}>
+        {/* Background elements remain the same */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none"
              style={{
                backgroundImage: `
                  linear-gradient(90deg, transparent 98%, rgba(0, 255, 255, 0.1) 100%),
                  linear-gradient(0deg, transparent 98%, rgba(0, 255, 255, 0.1) 100%)
                `,
-               backgroundSize: '50px 50px',
-               animation: 'gridMove 20s linear infinite'
+               backgroundSize: typeof window !== 'undefined' && window.innerWidth < 640 ? '50px 50px' : typeof window !== 'undefined' && window.innerWidth < 1024 ? '60px 60px' : '70px 70px',
+               animation: `gridMove ${isListening || isConversing ? '8s' : '15s'} linear infinite`,
+               userSelect: 'none',
+               cursor: 'none'
              }}>
         </div>
         
-        {/* Moving Data Streams */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
-          {[...Array(8)].map((_, i) => (
+        <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none">
+          {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 8 : 10)].map((_, i) => (
             <div
               key={`stream-${i}`}
-              className="absolute w-px bg-gradient-to-b from-transparent via-neon-cyan/40 to-transparent"
+              className={`absolute w-px overflow-hidden select-none pointer-events-none bg-gradient-to-b from-transparent via-neon-cyan/40 to-transparent transition-all duration-500 ${
+                isListening || isConversing ? 'via-neon-cyan/70 sm:via-neon-cyan/80' : 'via-neon-cyan/30 sm:via-neon-cyan/40'
+              }`}
               style={{
-                left: `${i * 12.5}%`,
-                height: '100%',
-                animation: `dataStream ${3 + i * 0.5}s linear infinite`,
-                animationDelay: `${i * 0.8}s`
+                left: `${i * (100 / (typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 8 : 10))}%`,
+                height: '100vh',
+                maxHeight: '100vh',
+                animation: `dataStream ${isListening || isConversing ? (2 + i * 0.2) : (3 + i * 0.4)}s linear infinite`,
+                animationDelay: `${i * 0.3}s`,
+                userSelect: 'none',
+                cursor: 'none'
               }}
             />
           ))}
         </div>
         
-        {/* Floating Geometric Shapes */}
-        <div className="absolute inset-0">
-          {[...Array(6)].map((_, i) => (
+        <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none">
+          {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 3 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 4 : 6)].map((_, i) => (
             <div
               key={`geo-${i}`}
-              className="absolute border border-neon-purple/20 animate-float"
+              className={`absolute border overflow-hidden select-none pointer-events-none transition-all duration-700 ${
+                isListening || isConversing 
+                  ? 'border-neon-purple/40 animate-pulse' 
+                  : 'border-neon-purple/20'
+              }`}
               style={{
-                left: `${20 + (i * 15)}%`,
-                top: `${10 + (i % 3) * 30}%`,
-                width: `${30 + (i % 3) * 20}px`,
-                height: `${30 + (i % 3) * 20}px`,
-                animationDelay: `${i * 0.7}s`,
-                animationDuration: `${8 + (i % 3) * 2}s`,
-                transform: `rotate(${i * 15}deg)`,
-                animation: `geometricFloat ${8 + i}s ease-in-out infinite`
+                left: `${15 + (i * 12)}%`,
+                top: `${15 + (i % 3) * 20}%`,
+                width: `${15 + (i % 3) * 8}px`,
+                height: `${15 + (i % 3) * 8}px`,
+                maxWidth: '35px',
+                maxHeight: '35px',
+                animationDelay: `${i * 0.4}s`,
+                animationDuration: `${5 + (i % 3) * 2}s`,
+                transform: `rotate(${i * 25}deg)`,
+                animation: `geometricFloat ${isListening || isConversing ? (5 + i) : (7 + i)}s ease-in-out infinite`,
+                userSelect: 'none',
+                cursor: 'none'
               }}
             />
           ))}
         </div>
+
+        {(isListening || isConversing) && (
+          <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none">
+            {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 12 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 16 : 20)].map((_, i) => (
+              <div
+                key={`page-matrix-${i}`}
+                className="absolute text-xs sm:text-sm font-mono text-neon-cyan/30 animate-float overflow-hidden select-none pointer-events-none"
+                style={{
+                  left: `${15 + Math.random() * 70}%`,
+                  top: `${15 + Math.random() * 70}%`,
+                  animationDelay: `${i * 0.12}s`,
+                  animationDuration: `${2 + Math.random() * 2}s`,
+                  textShadow: '0 0 5px currentColor',
+                  userSelect: 'none',
+                  cursor: 'none'
+                }}
+              >
+                {Math.random() > 0.5 ? '1' : '0'}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="container mx-auto px-6 text-center relative z-10">
-        {/* Hero Content */}
-        <div className="animate-fade-in-up">
-          <h1 className="text-6xl md:text-8xl font-orbitron font-bold mb-6 text-glow">
-            Your Intelligent
-            <br />
-            <span className="bg-gradient-to-r from-neon-blue via-neon-purple to-neon-cyan bg-clip-text text-transparent">
-              AI Companion
-            </span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Experience the future of AI interaction with our advanced companion that understands, learns, and evolves with you.
-          </p>
-        </div>
-
-        {/* Robot Avatar */}
-        <div className="relative mb-12 animate-scale-in" style={{ animationDelay: '0.3s' }}>
-          <div className="relative inline-block perspective-1000">
-            {/* 3D Emergence Effects */}
-            {isListening && (
-              <>
-                {/* Screen Break Effect */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {[...Array(12)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-1 bg-gradient-to-t from-neon-cyan to-transparent opacity-70"
-                      style={{
-                        left: `${10 + (i * 7)}%`,
-                        top: '-20px',
-                        height: `${60 + Math.sin(i) * 40}px`,
-                        transform: `rotate(${-15 + i * 3}deg)`,
-                        animation: `emerge ${2 + (i % 3) * 0.5}s ease-in-out infinite alternate`,
-                        animationDelay: `${i * 0.1}s`,
-                        boxShadow: '0 0 10px currentColor'
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Data Stream Effects */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  {[...Array(6)].map((_, i) => (
-                    <div
-                      key={`stream-${i}`}
-                      className="absolute text-xs font-mono text-neon-blue/60 animate-float"
-                      style={{
-                        left: `${15 + (i * 15)}%`,
-                        top: `${20 + (i % 3) * 25}%`,
-                        animationDelay: `${i * 0.4}s`,
-                        animationDuration: `${4 + (i % 2)}s`
-                      }}
-                    >
-                      {['01101', '11010', '10110', '01011', '11001', '10101'][i]}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-            
-            {/* 3D Robot Container */}
-            <div className={`relative transform-gpu transition-all duration-1000 ${
+      <div className={`w-full h-full max-w-full max-h-full px-3 sm:px-4 md:px-6 lg:px-8 text-center relative z-10 transition-all duration-1000 flex flex-col justify-center items-center overflow-hidden`} 
+           style={{ 
+             transformOrigin: 'center center'
+           }}>
+        
+        {/* Title - PERMANENTLY HIDDEN after first conversation */}
+        {!titleHasBeenHidden && (
+          <div className={`animate-fade-in-up transition-all duration-1000 mb-1 sm:mb-2 md:mb-3 overflow-hidden select-none ${
+            isListening ? 'text-glow-enhanced' : ''
+          } ${isConversing ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}
+               style={{ 
+                 userSelect: 'none',
+                 WebkitUserSelect: 'none',
+                 cursor: 'default'
+               }}>
+            <h1 className={`text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-orbitron font-bold leading-tight transition-all duration-700 overflow-hidden select-none ${
               isListening 
-                ? 'scale-110 translate-z-20 rotate-x-5 rotate-y-2' 
-                : 'scale-100 translate-z-0'
-            }`} 
-            style={{
-              transform: isListening 
-                ? 'scale(1.1) translateZ(20px) rotateX(5deg) rotateY(2deg)' 
-                : 'scale(1) translateZ(0px)',
-              filter: isListening ? 'drop-shadow(0 20px 40px rgba(0, 255, 255, 0.3))' : 'none'
+                ? 'text-glow-enhanced' 
+                : 'text-glow'
+            }`} style={{ 
+              transformOrigin: 'center center',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              cursor: 'default'
             }}>
-              
-              {/* Holographic Grid Behind Robot */}
-              {isListening && (
-                <div className="absolute inset-0 opacity-30 pointer-events-none">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neon-cyan/20 to-transparent animate-pulse"
-                       style={{
-                         backgroundImage: `
-                           linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.1) 50%, transparent 100%),
-                           repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(0, 255, 255, 0.1) 10px, rgba(0, 255, 255, 0.1) 12px),
-                           repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(0, 255, 255, 0.1) 10px, rgba(0, 255, 255, 0.1) 12px)
-                         `
-                       }}>
-                  </div>
-                </div>
-              )}
-
-              {/* Robot Image with 3D Effect */}
-              <img 
-                src={robotAvatar} 
-                alt="AI Robot Companion" 
-                className={`relative z-10 w-64 h-64 mx-auto transition-all duration-1000 ${
-                  isListening ? 'brightness-125 contrast-110' : 'brightness-100'
-                }`}
-                style={{
-                  filter: isListening 
-                    ? 'brightness(1.25) contrast(1.1) drop-shadow(0 0 30px rgba(0, 255, 255, 0.8))' 
-                    : 'brightness(1)'
-                }}
-              />
-            </div>
-            
-            {/* Enhanced Listening Indicators */}
-            {isListening && (
-              <>
-                {/* 3D Audio Wave Visualization */}
-                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2" 
-                     style={{ perspective: '200px' }}>
-                  <div className="flex items-end space-x-1">
-                    {audioLevels.map((level, index) => (
-                      <div
-                        key={index}
-                        className="bg-gradient-to-t from-neon-cyan via-neon-blue to-neon-purple rounded-full transition-all duration-100"
-                        style={{
-                          width: '4px',
-                          height: `${level * 40 + 10}px`,
-                          boxShadow: `0 0 15px hsl(var(--neon-cyan)/0.8)`,
-                          transform: `rotateX(45deg) translateZ(${level * 10}px)`
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Matrix-style Floating Data */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  {[...Array(15)].map((_, i) => (
-                    <div
-                      key={`matrix-${i}`}
-                      className="absolute text-xs font-mono text-neon-cyan/40 animate-float"
-                      style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
-                        animationDelay: `${i * 0.2}s`,
-                        animationDuration: `${3 + Math.random() * 2}s`,
-                        textShadow: '0 0 5px currentColor'
-                      }}
-                    >
-                      {Math.random() > 0.5 ? '1' : '0'}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Status Text with 3D Effect */}
-                <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center">
-                  <div className="flex items-center space-x-2 bg-black/30 backdrop-blur-md rounded-full px-6 py-3 border border-neon-cyan/40"
-                       style={{ 
-                         transform: 'translateZ(10px)',
-                         boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 255, 0.3)'
-                       }}>
-                    <div className="w-3 h-3 bg-neon-cyan rounded-full animate-pulse"
-                         style={{ boxShadow: '0 0 10px currentColor' }}></div>
-                    <span className="text-sm font-orbitron text-neon-cyan font-medium">
-                      Neural Network Active
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
+              HI I AM PICO
+            </h1>
           </div>
+        )}
+
+        {/* Conversation Area - WITH TYPING ANIMATION & SELECTIVE TEXT SELECTION */}
+        {titleHasBeenHidden && (
+          <div className={`animate-fade-in-up transition-all duration-1000 mb-1 sm:mb-2 md:mb-3 overflow-hidden ${
+            isConversing ? 'opacity-100 translate-y-0' : 'opacity-50 translate-y-2'
+          }`}>
+            <div className={`bg-gradient-to-r backdrop-blur-sm rounded-2xl p-3 sm:p-4 md:p-5 border max-w-lg mx-auto transition-all duration-700 overflow-hidden ${
+              isConversing 
+                ? 'from-neon-purple/15 to-neon-blue/15 border-neon-purple/30' 
+                : 'from-neon-blue/8 to-neon-purple/8 border-neon-cyan/15'
+            }`}
+            style={{ cursor: 'default' }}>
+              {isConversing ? (
+                <div className="select-none">
+                  {/* TYPING ANIMATION TEXT - ONLY THIS IS SELECTABLE */}
+                  <p className="text-xs sm:text-sm font-orbitron text-neon-purple/90 leading-relaxed overflow-hidden select-text"
+                     style={{ 
+                       cursor: 'text',
+                       userSelect: 'text',
+                       WebkitUserSelect: 'text',
+                       MozUserSelect: 'text'
+                     }}>
+                    "{typedText}
+                    {isTyping && (
+                      <span className="animate-pulse text-neon-purple">|</span>
+                    )}"
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs sm:text-sm font-orbitron text-neon-cyan/60 leading-relaxed overflow-hidden select-none"
+                   style={{ 
+                     cursor: 'default',
+                     userSelect: 'none',
+                     WebkitUserSelect: 'none'
+                   }}>
+                  Ready for your next question...
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Robot Avatar Container - ANIMATION IN BACKGROUND ONLY */}
+        <div className={`relative mb-1 sm:mb-2 md:mb-3 overflow-hidden select-none ${
+          isConversing ? 'scale-105' : titleHasBeenHidden ? 'scale-102' : 'scale-100'
+        }`} style={{ 
+          maxWidth: '95vw',
+          maxHeight: '65vh',
+          transform: 'translateY(20px)',
+          transformOrigin: 'center center',
+          transition: 'transform 0.3s ease'
+        }}>
+          
+          {/* Animated Background Layer Behind Image */}
+          {(isListening || isConversing) && (
+            <div 
+              className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+              style={{
+                background: `radial-gradient(circle at center, rgba(${isConversing ? '128, 0, 255' : '0, 255, 255'}, 0.15), transparent 70%)`,
+                animation: 'floating 4s ease-in-out infinite',
+                borderRadius: '50%',
+                transform: 'scale(1.2)',
+                filter: `blur(20px)`
+              }}
+            />
+          )}
+
+          {/* Screen Break Effects */}
+          {(isListening || isConversing) && (
+            <div className="absolute inset-0 z-1 pointer-events-none overflow-hidden select-none">
+              {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 8 : 12)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`absolute w-0.5 sm:w-1 bg-gradient-to-t opacity-60 sm:opacity-80 overflow-hidden select-none pointer-events-none ${
+                    isConversing 
+                      ? 'from-neon-purple via-neon-blue to-transparent' 
+                      : 'from-neon-cyan via-neon-blue to-transparent'
+                  }`}
+                  style={{
+                    left: `${5 + (i * 6)}%`,
+                    top: '-25px',
+                    height: `${50 + Math.sin(i) * 30}px`,
+                    maxHeight: '100px',
+                    transform: `rotate(${-15 + i * 2}deg)`,
+                    animation: `emerge ${1.5 + (i % 3) * 0.2}s ease-in-out infinite alternate`,
+                    animationDelay: `${i * 0.07}s`,
+                    boxShadow: '0 0 12px currentColor',
+                    userSelect: 'none',
+                    cursor: 'none'
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Data Stream Effects */}
+          {(isListening || isConversing) && (
+            <div className="absolute inset-0 z-1 pointer-events-none overflow-hidden select-none">
+              {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : 8)].map((_, i) => (
+                <div
+                  key={`stream-${i}`}
+                  className={`absolute text-xs sm:text-sm font-mono animate-float overflow-hidden select-none pointer-events-none ${
+                    isConversing ? 'text-neon-purple/70' : 'text-neon-blue/60 sm:text-neon-blue/70'
+                  }`}
+                  style={{
+                    left: `${10 + (i * 8)}%`,
+                    top: `${10 + (i % 4) * 20}%`,
+                    animationDelay: `${i * 0.25}s`,
+                    animationDuration: `${2.5 + (i % 3) * 0.5}s`,
+                    textShadow: '0 0 8px currentColor',
+                    userSelect: 'none',
+                    cursor: 'none'
+                  }}
+                >
+                  {isConversing 
+                    ? ['TALK', 'CHAT', 'CONV', 'RESP', 'WORD', 'SPEAK'][i] || 'AI'
+                    : ['01101', '11010', '10110', '01011', '11001', '10101'][i] || '101'
+                  }
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* COMPLETELY STATIC Robot Image */}
+          <div className="relative z-10">
+            <img 
+              src={robotAvatar} 
+              alt="Pico Robot Companion" 
+              draggable={false}
+              className="w-48 h-48 xs:w-56 xs:h-56 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 xl:w-[28rem] xl:h-[28rem] 2xl:w-[32rem] 2xl:h-[32rem] object-cover select-none pointer-events-none rounded-full"
+              style={{
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none',
+                WebkitTouchCallout: 'none',
+                WebkitUserDrag: 'none',
+                maxWidth: '90vw',
+                maxHeight: '60vh',
+                cursor: 'none',
+                borderRadius: '50%',
+                border: 'none',
+                outline: 'none',
+                transform: 'none',
+                filter: 'none',
+                transition: 'none',
+                boxShadow: 'none'
+              }}
+            />
+          </div>
+          
+          {/* Audio Wave Visualization */}
+          {(isListening || isConversing) && (
+            <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 transform -translate-x-1/2 overflow-hidden select-none pointer-events-none z-1" 
+                 style={{ 
+                   perspective: '200px',
+                   maxWidth: '200px'
+                 }}>
+              <div className="flex items-end justify-center space-x-1 sm:space-x-2 overflow-hidden select-none">
+                {audioLevels.slice(0, 7).map((level, index) => (
+                  <div
+                    key={index}
+                    className={`rounded-full transition-all duration-100 overflow-hidden select-none pointer-events-none ${
+                      isConversing 
+                        ? 'bg-gradient-to-t from-neon-purple via-neon-blue to-neon-cyan' 
+                        : 'bg-gradient-to-t from-neon-cyan via-neon-blue to-neon-purple'
+                    }`}
+                    style={{
+                      width: '3px',
+                      height: `${level * 30 + 10}px`,
+                      maxHeight: '45px',
+                      boxShadow: `0 0 10px hsl(var(${isConversing ? '--neon-purple' : '--neon-cyan'})/0.8)`,
+                      userSelect: 'none',
+                      cursor: 'none'
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center animate-slide-in-left" style={{ animationDelay: '0.6s' }}>
-          <Button variant="default" size="lg" className="holographic-border hover-lift px-8 py-4 text-lg font-orbitron neon-glow">
-            Start Conversation
-          </Button>
-          <Button variant="outline" size="lg" className="glass hover-lift px-8 py-4 text-lg border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10">
-            Explore Features
-          </Button>
-        </div>
-
-        {/* Status Indicator */}
-        <div className="mt-12 flex items-center justify-center space-x-3 animate-fade-in-up" style={{ animationDelay: '0.9s' }}>
-          <div className="w-3 h-3 bg-neon-cyan rounded-full pulse-glow"></div>
-          <span className="text-sm font-orbitron text-neon-cyan">AI System Online</span>
+        {/* Status Indicator - MOVED DOWN */}
+        <div className={`flex items-center justify-center space-x-2 animate-fade-in-up transition-all duration-500 overflow-hidden select-none ${
+          isListening || isConversing ? 'scale-102 sm:scale-105' : 'scale-100'
+        }`} style={{ 
+          animationDelay: '0.9s',
+          cursor: 'default',
+          transform: 'translateY(20px)',
+          marginTop: '10px'
+        }}>
+          <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-500 overflow-hidden select-none ${
+            isConversing ? 'bg-neon-purple pulse-glow-enhanced' :
+            isListening ? 'bg-neon-cyan pulse-glow-enhanced' : 'bg-neon-cyan pulse-glow'
+          }`}></div>
+          <span className={`text-xs sm:text-sm font-orbitron transition-all duration-500 overflow-hidden select-none ${
+            isConversing ? 'text-neon-purple font-bold' :
+            isListening ? 'text-neon-cyan font-bold' : 'text-neon-cyan'
+          }`}
+          style={{ cursor: 'default' }}>
+            {isConversing ? 'Pico Speaking...' : isListening ? 'Pico Listening...' : 'Pico System Online'}
+          </span>
         </div>
       </div>
     </section>
