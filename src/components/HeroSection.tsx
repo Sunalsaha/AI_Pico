@@ -728,33 +728,8 @@ export const HeroSection = () => {
           }
         }
         
-        /* COMPLETELY TRANSPARENT IMAGE CARD - NO BLACK BACKGROUNDS ANYWHERE */
-        .image-card {
-          position: relative;
-          background: none !important; /* Completely removed background */
-          transform-style: preserve-3d;
-          transition: all 0.3s ease;
-          display: flex;
-          flex-direction: column;
-          animation: cardPulse 3s ease-in-out infinite;
-          width: 100%;
-          height: 100%;
-        }
         
-        /* Remove any ::before or ::after pseudo-elements that might add backgrounds */
-        .image-card::before,
-        .image-card::after {
-          display: none !important;
-        }
-        
-        .image-card:hover {
-          transform: translateZ(20px) rotateX(2deg) rotateY(2deg);
-          box-shadow: 
-            0 18px 60px rgba(0, 255, 255, 0.35),
-            0 0 30px rgba(0, 255, 255, 0.25),
-            inset 0 3px 0 rgba(255, 255, 255, 0.2),
-            0 30px 80px rgba(0, 255, 255, 0.25);
-        }
+       
         
         /* COMPLETELY CLEAN IMAGE WRAPPER - NO BACKGROUNDS */
         .image-wrapper {
