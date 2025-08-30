@@ -127,15 +127,19 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
       }
     }, 2000);
 
-    // Simulate user interactions to trigger audio
-    const simulateInteractions = () => {
-      // Dispatch various events that might unlock audio
-      const events = ['click', 'touchstart', 'keydown', 'mousemove'];
-      events.forEach(eventType => {
-        const event = new Event(eventType, { bubbles: true });
-        document.dispatchEvent(event);
-      });
-    };
+   // Simulate user interactions to trigger audio
+const simulateInteractions = () => {
+  // Dispatch various events that might unlock audio
+  const events = [];
+  events.forEach(eventType => {
+    const event = new Event(eventType, { bubbles: true });
+    document.dispatchEvent(event);
+  });
+};
+
+// Run automatically when the page is opened (after DOM is ready)
+document.addEventListener('DOMContentLoaded', simulateInteractions);
+
 
     // Try simulation multiple times
     setTimeout(simulateInteractions, 100);

@@ -9,15 +9,6 @@ interface PicoMessage {
   mood?: string;
   user_count?: number;
   error?: string;
-  image_url?: string; // Add support for image responses
-  image_prompt?: string;
-}
-
-interface GeneratedImage {
-  id: string;
-  url: string;
-  prompt: string;
-  timestamp: string;
 }
 
 interface ConnectionState {
@@ -26,6 +17,633 @@ interface ConnectionState {
   error: string | null;
   reconnectAttempts: number;
 }
+
+// Enhanced Weather Widget Component with Better Visibility
+const EnhancedWeatherWidget = () => {
+  const [activeTab, setActiveTab] = useState('Precipitation');
+  const [weatherData, setWeatherData] = useState(null);
+  const [location, setLocation] = useState({ lat: null, lon: null, name: '' });
+  const [precipitationData, setPrecipitationData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showScrollbar, setShowScrollbar] = useState(false);
+  const [showContainer, setShowContainer] = useState(true); // Add new state for container visibility
+
+  // Modified useEffect for scrollbar and container management
+  useEffect(() => {
+    if (['Hourly', 'Daily', 'Precipitation'].includes(activeTab)) {
+      setShowScrollbar(true);
+      setShowContainer(true); // Show container when tab becomes active
+      const timer = setTimeout(() => {
+        setShowScrollbar(false); // Hide scrollbar first
+        // After scrollbar animation completes, hide the entire container
+        setTimeout(() => {
+          setShowContainer(false);
+        }, 500); // 500ms matches the CSS transition duration
+      }, 15000);
+      return () => clearTimeout(timer);
+    } else {
+      // Reset states when switching to other tabs
+      setShowContainer(true);
+      setShowScrollbar(false);
+    }
+  }, [activeTab]);
+
+  // Get weather icon based on weather code
+  const getWeatherIcon = (weatherCode, isDay = true) => {
+    const iconMap = {
+      0: isDay ? '☀️' : '🌙', // Clear sky
+      1: isDay ? '🌤️' : '🌙', // Mainly clear
+      2: '⛅', // Partly cloudy
+      3: '☁️', // Overcast
+      45: '🌫️', // Fog
+      48: '🌫️', // Depositing rime fog
+      51: '🌦️', // Light drizzle
+      53: '🌦️', // Moderate drizzle
+      55: '🌦️', // Dense drizzle
+      61: '🌧️', // Slight rain
+      63: '🌧️', // Moderate rain
+      65: '🌧️', // Heavy rain
+      71: '🌨️', // Slight snow
+      73: '❄️', // Moderate snow
+      75: '❄️', // Heavy snow
+      80: '🌦️', // Slight rain showers
+      81: '🌧️', // Moderate rain showers
+      82: '⛈️', // Violent rain showers
+      95: '⛈️', // Thunderstorm
+      96: '⛈️', // Thunderstorm with hail
+      99: '⛈️', // Thunderstorm with heavy hail
+    };
+    return iconMap[weatherCode] || '🌤️';
+  };
+
+  // Get location name from coordinates
+  const getLocationName = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+      );
+      const data = await response.json();
+      return data.city || data.locality || data.principalSubdivision || 'Unknown Location';
+    } catch (error) {
+      console.error('Error getting location name:', error);
+      return 'Unknown Location';
+    }
+  };
+
+  // Fetch comprehensive weather data
+  const fetchWeatherData = async (lat, lon) => {
+    try {
+      setLoading(true);
+      
+      // Get location name
+      const locationName = await getLocationName(lat, lon);
+      
+      // Get current and forecast weather
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&hourly=precipitation,temperature_2m&timezone=auto&forecast_days=7`
+      );
+      
+      const data = await response.json();
+      
+      if (data && data.current_weather) {
+        setWeatherData(data);
+        setLocation({ lat, lon, name: locationName });
+        
+        // Process precipitation data for chart
+        const dailyPrecipitation = data.daily.precipitation_sum.slice(0, 7).map((precip, index) => ({
+          day: ['Today', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'][index] || 'Day',
+          amount: precip || 0
+        }));
+        
+        setPrecipitationData(dailyPrecipitation);
+        setError(null);
+      }
+      
+    } catch (err) {
+      setError('Failed to fetch weather data');
+      console.error('Weather fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchWeatherData(latitude, longitude);
+        },
+        (error) => {
+          setError('Location access denied');
+          setLoading(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+    } else {
+      setError('Geolocation not supported');
+      setLoading(false);
+    }
+  }, []);
+
+  // Refresh weather data every 10 minutes
+  useEffect(() => {
+    if (location.lat && location.lon) {
+      const interval = setInterval(() => {
+        fetchWeatherData(location.lat, location.lon);
+      }, 600000); // 10 minutes
+      
+      return () => clearInterval(interval);
+    }
+  }, [location.lat, location.lon]);
+
+  if (loading) {
+    return (
+      <div className="weather-widget-enhanced loading">
+        <div className="loading-spinner">📡</div>
+        <div>Loading weather...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="weather-widget-enhanced error">
+        <div>⚠️ {error}</div>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    );
+  }
+
+  const currentTemp = weatherData?.current_weather?.temperature;
+  const weatherCode = weatherData?.current_weather?.weathercode;
+  const isDay = weatherData?.current_weather?.is_day;
+  
+  // Get next rain prediction
+  const getNextRainPrediction = () => {
+    if (!weatherData?.daily) return '';
+    
+    const tomorrow = weatherData.daily;
+    const tomorrowPrecip = tomorrow.precipitation_sum[1];
+    const tomorrowProbability = tomorrow.precipitation_probability_max[1];
+    
+    if (tomorrowPrecip > 0 || tomorrowProbability > 30) {
+      return `${tomorrowPrecip.toFixed(1)} cm of rain expected on ${new Date(tomorrow.time[1]).toLocaleDateString('en', { weekday: 'long' })}`;
+    }
+    
+    return 'No significant rain expected';
+  };
+
+  return (
+    <>
+      <div className="weather-widget-enhanced">
+        {/* Header */}
+        <div className="weather-header">
+          <div className="location-info">
+            <span className="location-icon">📍</span>
+            <span className="location-name">{location.name}</span>
+          </div>
+        </div>
+
+        {/* Main Weather Display */}
+        <div className="weather-main">
+          <div className="weather-icon-large">
+            {getWeatherIcon(weatherCode, isDay)}
+          </div>
+          <div className="temperature-main">
+            {Math.round(currentTemp)}°
+          </div>
+          <div className="weather-details">
+            <div className="rain-prediction">
+              <span className="rain-icon">🌧️</span>
+              <span className="rain-text">{getNextRainPrediction()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="weather-tabs">
+          {['Hourly', 'Daily', 'Precipitation'].map((tab) => (
+            <button
+              key={tab}
+              className={`weather-tab ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Precipitation Chart - Updated with showContainer condition */}
+        {activeTab === 'Precipitation' && showContainer && (
+          <div className={`precipitation-chart scrollbar-container ${showScrollbar ? 'show-scrollbar' : 'hide-scrollbar'}`}>
+            <div className="chart-container">
+              <div className="y-axis">
+                <div className="y-label">2.4 cm</div>
+                <div className="y-label">1.6 cm</div>
+                <div className="y-label">0.8 cm</div>
+              </div>
+              <div className="chart-bars">
+                {precipitationData.map((data, index) => (
+                  <div key={index} className="bar-container">
+                    <div 
+                      className="precipitation-bar"
+                      style={{ 
+                        height: `${Math.max(data.amount * 3, 1)}px`,
+                        backgroundColor: index === 0 ? '#888' : '#50d3ffff'
+                      }}
+                    />
+                    <div className="day-label">{data.day}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Daily Forecast - Updated with showContainer condition */}
+        {activeTab === 'Daily' && weatherData?.daily && showContainer && (
+          <div className={`daily-forecast scrollbar-container ${showScrollbar ? 'show-scrollbar' : 'hide-scrollbar'}`}>
+            {weatherData.daily.time.slice(0, 7).map((date, index) => (
+              <div key={index} className="daily-item">
+                <div className="day">
+                  {index === 0 ? 'Today' : new Date(date).toLocaleDateString('en', { weekday: 'short' })}
+                </div>
+                <div className="daily-icon">
+                  {getWeatherIcon(weatherData.daily.weathercode[index])}
+                </div>
+                <div className="temps">
+                  <span className="high">{Math.round(weatherData.daily.temperature_2m_max[index])}°</span>
+                  <span className="low">{Math.round(weatherData.daily.temperature_2m_min[index])}°</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Hourly Forecast - Updated with showContainer condition */}
+        {activeTab === 'Hourly' && weatherData?.hourly && showContainer && (
+          <div className={`hourly-forecast scrollbar-container ${showScrollbar ? 'show-scrollbar' : 'hide-scrollbar'}`}>
+            {Array.from({ length: 12 }, (_, i) => {
+              const hour = new Date();
+              hour.setHours(hour.getHours() + i);
+              return (
+                <div key={i} className="hourly-item">
+                  <div className="hour">
+                    {i === 0 ? 'Now' : hour.toLocaleTimeString('en', { hour: '2-digit', hour12: false })}
+                  </div>
+                  <div className="hourly-temp">
+                    {Math.round(weatherData.hourly.temperature_2m[i])}°
+                  </div>
+                  <div className="hourly-precip">
+                    {weatherData.hourly.precipitation[i]?.toFixed(1) || '0.0'}mm
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <style jsx>{`
+        .weather-widget-enhanced {
+          position: fixed;
+          bottom: 10px;
+          left: 10px;
+          width: 320px;
+          background: transparent;
+          border-radius: 16px;
+          color: white;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+          backdrop-filter: blur(25px);
+          box-shadow: 0 12px 40px rgba(115, 250, 252, 0.21), 0 0 0 1px rgba(133, 228, 254, 0.1);
+          overflow: hidden;
+          z-index: 1000;
+          border: 2px solid rgb(12, 114, 117);
+        }
+
+        .weather-widget-enhanced.loading,
+        .weather-widget-enhanced.error {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 40px 20px;
+          text-align: center;
+          background: rgba(40, 40, 45, 0.98);
+        }
+
+        .loading-spinner {
+          font-size: 24px;
+          animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .weather-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 18px 22px 2px;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+        }
+
+        .location-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 15px;
+          font-weight: 600;
+          color: #ffffff;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .location-icon {
+          font-size: 14px;
+          filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+        }
+
+        .weather-main {
+          padding: 22px;
+          display: flex;
+          align-items: flex-start;
+          gap: 18px;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        }
+
+        .weather-icon-large {
+          font-size: 40px;
+          min-width: 40px;
+          line-height: 1;
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .temperature-main {
+          font-size: 40px;
+          font-weight: 300;
+          line-height: 1;
+          color: #ffffff;
+          text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7);
+        }
+
+        .weather-details {
+          flex: 1;
+          margin-top: 10px;
+        }
+
+        .rain-prediction {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 10px;
+          font-weight: 500;
+          background: rgba(30, 144, 255, 0.25);
+          color: #ffffff;
+          padding: 8px 8px;
+          border-radius: 22px;
+          max-width: 80%;
+          border: 1px solid rgba(30, 144, 255, 0.3);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .rain-icon {
+          font-size: 14px;
+          flex-shrink: 0;
+          filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+        }
+
+        .rain-text {
+          flex: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .weather-tabs {
+          display: flex;
+          padding: 0 22px;
+          gap: 3px;
+          background: rgba(255, 255, 255, 0.03);
+        }
+
+        .weather-tab {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.7);
+          padding: 1px 1px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: all 0.3s ease;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .weather-tab.active {
+          background: rgba(9, 166, 251, 0.82);
+          color: #ffffff;
+          box-shadow: 0 2px 8px rgba(13, 123, 197, 0.89);
+        }
+
+        .weather-tab:hover:not(.active) {
+          background: rgba(6, 56, 95, 0.37);
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Data container styles with transition for smooth hiding */
+        .precipitation-chart {
+          padding: 22px;
+          height: 130px;
+          background: rgba(255, 255, 255, 0.02);
+          transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .daily-forecast {
+          padding: 12px 22px 22px;
+          max-height: 210px;
+          overflow-y: auto;
+          background: rgba(255, 255, 255, 0.02);
+          transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .hourly-forecast {
+          padding: 12px 22px 22px;
+          max-height: 210px;
+          overflow-y: auto;
+          background: rgba(255, 255, 255, 0.02);
+          transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .chart-container {
+          display: flex;
+          height: 100%;
+          gap: 14px;
+        }
+
+        .y-axis {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          width: 45px;
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.8);
+          font-weight: 500;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .chart-bars {
+          flex: 1;
+          display: flex;
+          align-items: end;
+          justify-content: space-between;
+          padding: 0 12px;
+        }
+
+        .bar-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          min-width: 22px;
+        }
+
+        .precipitation-bar {
+          width: 18px;
+          min-height: 6px;
+          border-radius: 3px;
+          transition: all 0.4s ease;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .day-label {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.8);
+          font-weight: 500;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .daily-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .daily-item:last-child {
+          border-bottom: none;
+        }
+
+        .day {
+          font-size: 15px;
+          min-width: 65px;
+          font-weight: 500;
+          color: #ffffff;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .daily-icon {
+          font-size: 22px;
+          flex: 1;
+          text-align: center;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .temps {
+          display: flex;
+          gap: 10px;
+          min-width: 65px;
+          justify-content: end;
+        }
+
+        .high {
+          font-weight: 600;
+          color: #ffffff;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .low {
+          color: rgba(255, 255, 255, 0.7);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .hourly-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 0;
+          font-size: 13px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .hourly-item:last-child {
+          border-bottom: none;
+        }
+
+        .hour {
+          min-width: 45px;
+          font-weight: 500;
+          color: #ffffff;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .hourly-temp {
+          min-width: 35px;
+          text-align: center;
+          font-weight: 500;
+          color: #ffffff;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .hourly-precip {
+          color: #00d4ff;
+          font-weight: 600;
+          min-width: 45px;
+          text-align: right;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Hide scrollbar completely */
+        .scrollbar-container::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-container {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        /* Container fade out animation */
+        .hide-scrollbar {
+          opacity: 0;
+          transform: translateY(10px);
+          pointer-events: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+          .weather-widget-enhanced {
+            width: 300px;
+          }
+          
+          .temperature-main {
+            font-size: 46px;
+          }
+          
+          .weather-icon-large {
+            font-size: 44px;
+          }
+        }
+      `}</style>
+    </>
+  );
+};
 
 export const HeroSection = () => {
   const [isListening, setIsListening] = useState(false);
@@ -39,13 +657,13 @@ export const HeroSection = () => {
   const [fullText, setFullText] = useState("Hello! I'm Pico. How can I assist you today?");
   const [picoData, setPicoData] = useState<PicoMessage | null>(null);
   
-  // Image generation states
-  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [showImageCorner, setShowImageCorner] = useState(false);
-  const [currentImage, setCurrentImage] = useState<GeneratedImage | null>(null);
-  const [imageAnimationState, setImageAnimationState] = useState<'entering' | 'showing' | 'exiting' | 'hidden'>('hidden');
-  const [imageDimensions, setImageDimensions] = useState<{width: number, height: number} | null>(null);
+  // Image animation states
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [showImage, setShowImage] = useState(false);
+  const [imageAnimationState, setImageAnimationState] = useState<'entering' | 'visible' | 'exiting' | 'hidden'>('hidden');
+  const [demoImageStartTime, setDemoImageStartTime] = useState<number | null>(null);
+  const imageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Connection management states
   const [connectionState, setConnectionState] = useState<ConnectionState>({
@@ -59,17 +677,19 @@ export const HeroSection = () => {
   const [splineLoaded, setSplineLoaded] = useState(false);
   const [splineError, setSplineError] = useState(false);
   
+  // Clock state
+  const [clockTime, setClockTime] = useState('');
+  
   // WebSocket refs and constants
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);
-  const imageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  const WS_URL = 'ws://localhost:8765';
+  const WS_URL = 'ws://localhost:8000/ws';
   const MAX_RECONNECT_ATTEMPTS = 5;
-  const HEARTBEAT_INTERVAL = 30000; // 30 seconds
-  const RECONNECT_INTERVALS = [1000, 2000, 4000, 8000, 16000]; // Exponential backoff
+  const HEARTBEAT_INTERVAL = 30000;
+  const RECONNECT_INTERVALS = [1000, 2000, 4000, 8000, 16000];
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -82,10 +702,15 @@ export const HeroSection = () => {
       clearInterval(heartbeatIntervalRef.current);
       heartbeatIntervalRef.current = null;
     }
-
+    
     if (imageTimeoutRef.current) {
       clearTimeout(imageTimeoutRef.current);
       imageTimeoutRef.current = null;
+    }
+    
+    if (exitTimeoutRef.current) {
+      clearTimeout(exitTimeoutRef.current);
+      exitTimeoutRef.current = null;
     }
     
     if (ws.current) {
@@ -133,33 +758,48 @@ export const HeroSection = () => {
     }
   }, []);
 
-  // Handle image load and get dimensions
-  const handleImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = event.target as HTMLImageElement;
-    const { naturalWidth, naturalHeight } = img;
-    setImageDimensions({ width: naturalWidth, height: naturalHeight });
-  }, []);
+  // Show animated image with proper timeout cleanup and exit animation
+  const showAnimatedImage = useCallback((imageUrl: string) => {
+    console.log('Starting image animation');
+    
+    if (imageTimeoutRef.current) {
+      clearTimeout(imageTimeoutRef.current);
+      imageTimeoutRef.current = null;
+    }
+    if (exitTimeoutRef.current) {
+      clearTimeout(exitTimeoutRef.current);
+      exitTimeoutRef.current = null;
+    }
 
-  // UPDATED: Image animation sequence - disappears after 5 seconds
-  const startImageAnimation = useCallback((image: GeneratedImage) => {
-    setCurrentImage(image);
-    setShowImageCorner(true);
+    setGeneratedImage(imageUrl);
+    setShowImage(true);
     setImageAnimationState('entering');
-    setImageDimensions(null); // Reset dimensions
+    setDemoImageStartTime(Date.now());
 
-    // After enter animation completes (2s), show for 5s then hide immediately
     setTimeout(() => {
-      setImageAnimationState('showing');
+      console.log('Image visible, starting 10s timer');
+      setImageAnimationState('visible');
       
-      // After showing for 5s, hide immediately
       imageTimeoutRef.current = setTimeout(() => {
-        setImageAnimationState('hidden');
-        setShowImageCorner(false);
-        setCurrentImage(null);
-        setImageDimensions(null);
-      }, 5000); // Changed from 4000 to 5000 milliseconds (5 seconds)
+        console.log('Starting exit animation');
+        setImageAnimationState('exiting');
+        
+        exitTimeoutRef.current = setTimeout(() => {
+          console.log('Hiding image completely');
+          setShowImage(false);
+          setGeneratedImage(null);
+          setImageAnimationState('hidden');
+          setDemoImageStartTime(null);
+        }, 2000);
+      }, 10000);
     }, 2000);
   }, []);
+
+  // Demo function to test image animation
+  const triggerDemoImage = useCallback(() => {
+    const demoImageUrl = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face';
+    showAnimatedImage(demoImageUrl);
+  }, [showAnimatedImage]);
 
   // Start heartbeat mechanism
   const startHeartbeat = useCallback(() => {
@@ -178,7 +818,6 @@ export const HeroSection = () => {
   const connectWebSocket = useCallback(() => {
     if (isUnmountedRef.current) return;
     
-    // Don't attempt if we're already connected or connecting
     if (connectionState.isConnected || connectionState.isConnecting) return;
 
     setConnectionState(prev => ({ 
@@ -188,7 +827,7 @@ export const HeroSection = () => {
     }));
 
     try {
-      cleanup(); // Clean up any existing connection
+      cleanup();
       
       console.log(`Connecting to Pico backend: ${WS_URL}`);
       ws.current = new WebSocket(WS_URL);
@@ -205,8 +844,6 @@ export const HeroSection = () => {
         });
         
         startHeartbeat();
-        
-        // Request initial greeting
         sendMessage({ action: 'request_greeting' });
       };
 
@@ -214,35 +851,12 @@ export const HeroSection = () => {
         if (isUnmountedRef.current) return;
         
         try {
-          const data: PicoMessage = JSON.parse(event.data);
+          const data = JSON.parse(event.data);
           console.log('Received from Pico:', data);
-
           if (data.type === 'greeting') {
             setPicoData(data);
             setFullText(data.text);
-            
-            // Trigger conversation animation for new greetings
-            if (!isConversing && titleHasBeenHidden) {
-              startConversationAnimation();
-            }
-          } else if (data.type === 'image_generated' && data.image_url) {
-            // Handle generated image
-            const newImage: GeneratedImage = {
-              id: Date.now().toString(),
-              url: data.image_url,
-              prompt: data.image_prompt || 'Generated image',
-              timestamp: new Date().toISOString()
-            };
-            
-            setGeneratedImages(prev => [newImage, ...prev]);
-            setIsGeneratingImage(false);
-            startImageAnimation(newImage);
-            
-          } else if (data.type === 'image_generating') {
-            setIsGeneratingImage(true);
-            
           } else if (data.type === 'pong') {
-            // Heartbeat response received
             console.log('Heartbeat response received');
           } else if (data.type === 'error') {
             console.error('Server error:', data.error);
@@ -250,7 +864,26 @@ export const HeroSection = () => {
               ...prev, 
               error: data.error || 'Unknown server error' 
             }));
-            setIsGeneratingImage(false);
+          } else if (data.event === 'state') {
+            const v = data.value;
+            if (v === 'listening') {
+              setIsListening(true);
+              setIsConversing(false);
+              setIsTyping(false);
+              setTitleHasBeenHidden(true);
+            } else if (v === 'speaking') {
+              setIsListening(false);
+              setIsConversing(true);
+              setIsTyping(true);
+              setTypedText('');
+              setTitleHasBeenHidden(true);
+            } else {
+              setIsListening(false);
+              setIsConversing(false);
+              setIsTyping(false);
+            }
+          } else if (data.type === 'image_generated' && data.image_url) {
+            showAnimatedImage(data.image_url);
           }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
@@ -269,12 +902,15 @@ export const HeroSection = () => {
           error: event.code === 1000 ? null : `Connection closed (${event.code})`
         }));
 
+        setIsListening(false);
+        setIsConversing(false);
+        setIsTyping(false);
+
         if (heartbeatIntervalRef.current) {
           clearInterval(heartbeatIntervalRef.current);
           heartbeatIntervalRef.current = null;
         }
 
-        // Attempt reconnection if not intentionally closed
         if (event.code !== 1000 && connectionState.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
           const delay = RECONNECT_INTERVALS[Math.min(connectionState.reconnectAttempts, RECONNECT_INTERVALS.length - 1)];
           
@@ -300,6 +936,10 @@ export const HeroSection = () => {
           isConnecting: false,
           error: 'Connection failed' 
         }));
+        
+        setIsListening(false);
+        setIsConversing(false);
+        setIsTyping(false);
       };
 
     } catch (error) {
@@ -310,43 +950,28 @@ export const HeroSection = () => {
         error: 'Failed to create connection' 
       }));
     }
-  }, [connectionState.isConnected, connectionState.isConnecting, connectionState.reconnectAttempts, cleanup, startHeartbeat, sendMessage, isConversing, titleHasBeenHidden, startImageAnimation]);
-
-  // Start conversation animation
-  const startConversationAnimation = useCallback(() => {
-    setIsListening(true);
-    
-    setTimeout(() => {
-      setIsConversing(true);
-      if (!titleHasBeenHidden) {
-        setTitleHasBeenHidden(true);
-      }
-      setIsTyping(true);
-      setTypedText('');
-      
-      setTimeout(() => {
-        setIsConversing(false);
-        setIsListening(false);
-        setIsTyping(false);
-      }, 3000);
-    }, 1000);
-  }, [titleHasBeenHidden]);
+  }, [connectionState.isConnected, connectionState.isConnecting, connectionState.reconnectAttempts, cleanup, startHeartbeat, sendMessage, showAnimatedImage]);
 
   // Request new greeting from backend
   const requestNewGreeting = useCallback(() => {
     sendMessage({ action: 'request_greeting' });
   }, [sendMessage]);
 
-  // Demo function to test image animation
-  const triggerDemoImage = useCallback(() => {
-    const demoImage: GeneratedImage = {
-      id: Date.now().toString(),
-      url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=400&fit=crop&crop=face',
-      prompt: 'Demo AI Generated Portrait',
-      timestamp: new Date().toISOString()
+  // Clock update effect - updates every second
+  useEffect(() => {
+    const updateClock = () => {
+      const time = new Date();
+      const hours = time.getHours().toString().padStart(2, '0');
+      const minutes = time.getMinutes().toString().padStart(2, '0');
+      const seconds = time.getSeconds().toString().padStart(2, '0');
+      setClockTime(`${hours}:${minutes}:${seconds}`);
     };
-    startImageAnimation(demoImage);
-  }, [startImageAnimation]);
+    
+    updateClock();
+    const intervalId = setInterval(updateClock, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -357,7 +982,7 @@ export const HeroSection = () => {
       isUnmountedRef.current = true;
       cleanup();
     };
-  }, []);
+  }, [connectWebSocket, cleanup]);
 
   // Auto-refresh greeting every 30 seconds
   useEffect(() => {
@@ -370,33 +995,31 @@ export const HeroSection = () => {
     return () => clearInterval(interval);
   }, [connectionState.isConnected, isConversing, requestNewGreeting]);
 
-  // Original demo animation (reduced frequency since we have backend updates)
+  // Effect to hide image after 10 seconds from demo button click
   useEffect(() => {
-    if (connectionState.isConnected) return; // Skip demo if connected to backend
+    if (demoImageStartTime) {
+      const timeSinceDemo = Date.now() - demoImageStartTime;
+      const timeRemaining = Math.max(0, 10000 - timeSinceDemo);
+      
+      const timer = setTimeout(() => {
+        console.log('Hiding demo image after 10 seconds from click');
+        setImageAnimationState('exiting');
+        
+        exitTimeoutRef.current = setTimeout(() => {
+          setShowImage(false);
+          setGeneratedImage(null);
+          setImageAnimationState('hidden');
+          setDemoImageStartTime(null);
+        }, 2000);
+      }, timeRemaining);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [demoImageStartTime]);
 
-    const interval = setInterval(() => {
-      if (!isConversing) {
-        startConversationAnimation();
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [connectionState.isConnected, isConversing, startConversationAnimation]);
-
-  // Demo image generation every 15 seconds for testing
+  // Typing animation effect - only when connected
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (!showImageCorner && Math.random() > 0.7) { // 30% chance every 15 seconds
-        triggerDemoImage();
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [showImageCorner, triggerDemoImage]);
-
-  // Typing animation effect
-  useEffect(() => {
-    if (isTyping && isConversing && fullText) {
+    if (connectionState.isConnected && isTyping && isConversing && fullText) {
       let currentIndex = 0;
       const typingInterval = setInterval(() => {
         if (currentIndex <= fullText.length) {
@@ -410,13 +1033,13 @@ export const HeroSection = () => {
 
       return () => clearInterval(typingInterval);
     }
-  }, [isTyping, isConversing, fullText]);
+  }, [connectionState.isConnected, isTyping, isConversing, fullText]);
 
-  // Audio level animation
+  // Audio level animation - only when connected
   useEffect(() => {
     let animationFrame: number;
     
-    if (isListening || isConversing || isGeneratingImage) {
+    if (connectionState.isConnected && (isListening || isConversing)) {
       const animateAudio = () => {
         setAudioLevels(prev => 
           prev.map(() => Math.random() * 0.8 + 0.2)
@@ -431,7 +1054,21 @@ export const HeroSection = () => {
         cancelAnimationFrame(animationFrame);
       }
     };
-  }, [isListening, isConversing, isGeneratingImage]);
+  }, [connectionState.isConnected, isListening, isConversing]);
+
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (imageTimeoutRef.current) {
+        clearTimeout(imageTimeoutRef.current);
+        imageTimeoutRef.current = null;
+      }
+      if (exitTimeoutRef.current) {
+        clearTimeout(exitTimeoutRef.current);
+        exitTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Spline event handlers
   const onSplineLoad = () => {
@@ -445,25 +1082,53 @@ export const HeroSection = () => {
 
   return (
     <>
-      {/* Updated CSS with NO BLACK BACKGROUNDS */}
+      {/* Enhanced Real-time Clock */}
+      <div className="clock">
+        {clockTime || '00:00:00'}
+      </div>
+
+      {/* Enhanced Weather Widget */}
+      <EnhancedWeatherWidget />
+
+      {/* Enhanced CSS with better visibility and contrast */}
       <style jsx>{`
+        /* Enhanced Clock styles with better visibility */
+        .clock {
+          position: fixed;
+          top: 12px;
+          left: 12px;
+          background: rgba(20, 20, 25, 0.98);
+          color: #00ffff;
+          font-family: 'Courier New', monospace;
+          font-weight: bold;
+          font-size: 20px;
+          padding: 12px 16px;
+          border-radius: 12px;
+          border: 2px solid rgba(0, 255, 255, 0.4);
+          user-select: none;
+          z-index: 1100;
+          backdrop-filter: blur(25px);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 255, 255, 0.2);
+          text-shadow: 0 0 12px rgba(0, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
         .speech-bubble::after {
           content: '';
           position: absolute;
-          bottom: -12px;
+          bottom: -14px;
           left: 50%;
           transform: translateX(-50%);
           width: 0;
           height: 0;
-          border-left: 15px solid transparent;
-          border-right: 15px solid transparent;
-          border-top: 12px solid rgba(128, 0, 255, 0.3);
-          filter: drop-shadow(0 2px 4px rgba(128, 0, 255, 0.2));
+          border-left: 18px solid transparent;
+          border-right: 18px solid transparent;
+          border-top: 14px solid rgba(128, 0, 255, 0.4);
+          filter: drop-shadow(0 4px 8px rgba(128, 0, 255, 0.3));
         }
         
         .speech-bubble-cyan::after {
-          border-top-color: rgba(0, 255, 255, 0.25);
-          filter: drop-shadow(0 2px 4px rgba(0, 255, 255, 0.2));
+          border-top-color: rgba(0, 255, 255, 0.35);
+          filter: drop-shadow(0 4px 8px rgba(0, 255, 255, 0.3));
         }
         
         .speech-bubble {
@@ -473,9 +1138,9 @@ export const HeroSection = () => {
         
         @keyframes speechBubbleFloat {
           0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-3px) scale(1.02); }
+          50% { transform: translateY(-4px) scale(1.02); }
         }
-
+        
         .cyber-font {
           font-family: 'Courier New', 'Monaco', 'Menlo', 'Consolas', monospace;
           font-weight: 900;
@@ -484,414 +1149,222 @@ export const HeroSection = () => {
           font-style: normal;
         }
         
-        /* Connection status indicators */
+        /* Enhanced Connection status indicators */
         .connection-status {
           position: fixed;
-          top: 20px;
-          right: 20px;
+          top: 24px;
+          right: 24px;
           z-index: 1000;
-          padding: 8px 16px;
-          border-radius: 25px;
-          font-size: 11px;
+          padding: 10px 18px;
+          border-radius: 28px;
+          font-size: 12px;
           font-family: 'Courier New', monospace;
           font-weight: bold;
-          backdrop-filter: blur(10px);
+          backdrop-filter: blur(25px);
           transition: all 0.3s ease;
-          border: 1px solid;
+          border: 2px solid;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.6px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         
         .status-connected {
-          background: rgba(0, 255, 0, 0.15);
-          border-color: rgba(0, 255, 0, 0.4);
-          color: rgba(0, 255, 0, 0.9);
-          text-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+          background: rgba(20, 25, 20, 0.95);
+          border-color: rgba(0, 255, 0, 0.6);
+          color: rgba(0, 255, 0, 0.95);
+          text-shadow: 0 0 12px rgba(0, 255, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
         }
         
         .status-connecting {
-          background: rgba(255, 255, 0, 0.15);
-          border-color: rgba(255, 255, 0, 0.4);
-          color: rgba(255, 255, 0, 0.9);
-          text-shadow: 0 0 8px rgba(255, 255, 0, 0.3);
+          background: rgba(25, 25, 20, 0.95);
+          border-color: rgba(255, 255, 0, 0.6);
+          color: rgba(255, 255, 0, 0.95);
+          text-shadow: 0 0 12px rgba(255, 255, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
           animation: pulse 2s ease-in-out infinite;
         }
         
         .status-error {
-          background: rgba(255, 100, 100, 0.15);
-          border-color: rgba(255, 100, 100, 0.4);
-          color: rgba(255, 100, 100, 0.9);
-          text-shadow: 0 0 8px rgba(255, 100, 100, 0.3);
+          background: rgba(25, 20, 20, 0.95);
+          border-color: rgba(255, 100, 100, 0.6);
+          color: rgba(255, 100, 100, 0.95);
+          text-shadow: 0 0 12px rgba(255, 100, 100, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
         }
         
         @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
-        }
-        
-        /* Image generation indicator */
-        .image-generation-indicator {
-          position: fixed;
-          top: 50px;
-          right: 20px;
-          z-index: 1000;
-          padding: 8px 16px;
-          border-radius: 25px;
-          font-size: 10px;
-          font-family: 'Courier New', monospace;
-          font-weight: bold;
-          backdrop-filter: blur(10px);
-          transition: all 0.5s ease;
-          border: 1px solid rgba(255, 0, 255, 0.4);
-          background: rgba(255, 0, 255, 0.15);
-          color: rgba(255, 0, 255, 0.9);
-          text-shadow: 0 0 8px rgba(255, 0, 255, 0.3);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          animation: imageGenPulse 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes imageGenPulse {
           0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.05); }
+          50% { opacity: 0.7; transform: scale(1.02); }
         }
         
-        /* Clean Corner Image Container - NO BLACK BACKGROUNDS */
-        .corner-image-container {
+        /* Enhanced Animated Image Container */
+        .animated-image-container {
           position: fixed;
-          top: 120px;
-          right: 20px;
-          z-index: 999;
-          pointer-events: auto;
-          display: flex;
-          justify-content: center;
-          align-items: center;
+          top: 90px;
+          right: 24px;
+          width: 340px;
+          height: auto;
           perspective: 1200px;
-          min-width: 200px;
-          min-height: 150px;
-          max-width: 300px;
-          max-height: 450px;
-          width: auto;
-          height: auto;
-          background: none !important; /* Completely removed background */
+          z-index: 9999;
+          pointer-events: auto;
         }
         
-        @media (max-width: 1024px) {
-          .corner-image-container {
-            max-width: 280px;
-            max-height: 420px;
-          }
+        .animated-image-container.entering {
+          animation: imageEntry 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         
-        @media (max-width: 768px) {
-          .corner-image-container {
-            max-width: 250px;
-            max-height: 380px;
-            top: 100px;
-            right: 15px;
-          }
-        }
-        
-        @media (max-width: 640px) {
-          .corner-image-container {
-            max-width: 220px;
-            max-height: 340px;
-            top: 80px;
-            right: 10px;
-          }
-        }
-        
-        @media (max-width: 480px) {
-          .corner-image-container {
-            max-width: 200px;
-            max-height: 300px;
-            top: 70px;
-            right: 8px;
-          }
-        }
-        
-        /* Dramatic 3D emergence animations */
-        .image-emerge-entering {
-          animation: dramaticEmergence 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        
-        .image-emerge-showing {
+        .animated-image-container.visible {
           opacity: 1;
-          transform: translateX(0) translateY(0) translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
-          filter: blur(0px) brightness(1) saturate(1);
-          animation: attractiveFloat 4s ease-in-out infinite;
+          transform: translateZ(0) scale(1) rotateY(0deg) rotateX(0deg);
+          filter: blur(0px) brightness(1);
+          animation: floatUpDown 3s ease-in-out infinite;
         }
         
-        .image-emerge-exiting {
-          animation: dramaticReturn 2s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+        .animated-image-container.exiting {
+          animation: imageExit 2s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
         }
         
-        /* Main dramatic emergence animation */
-        @keyframes dramaticEmergence {
+        @keyframes imageEntry {
           0% {
             opacity: 0;
-            transform: translateX(120px) translateY(-120px) translateZ(-400px) 
-                       rotateX(30deg) rotateY(30deg) rotateZ(10deg) 
-                       scale(0.2);
-            filter: blur(15px) brightness(0.3) saturate(0.4);
-          }
-          25% {
-            opacity: 0.3;
-            transform: translateX(90px) translateY(-90px) translateZ(-300px) 
-                       rotateX(20deg) rotateY(20deg) rotateZ(7deg) 
-                       scale(0.4);
-            filter: blur(10px) brightness(0.5) saturate(0.6);
+            transform: translateZ(-1000px) rotateY(50deg) rotateX(30deg) scale(0.2);
+            filter: blur(20px) brightness(0.2);
           }
           50% {
-            opacity: 0.6;
-            transform: translateX(45px) translateY(-45px) translateZ(-150px) 
-                       rotateX(12deg) rotateY(12deg) rotateZ(4deg) 
-                       scale(0.7);
-            filter: blur(5px) brightness(0.8) saturate(0.9);
-          }
-          80% {
-            opacity: 0.9;
-            transform: translateX(10px) translateY(-10px) translateZ(30px) 
-                       rotateX(3deg) rotateY(3deg) rotateZ(1deg) 
-                       scale(0.95);
-            filter: blur(2px) brightness(0.95) saturate(0.98);
+            opacity: 0.8;
+            transform: translateZ(-250px) rotateY(20deg) rotateX(10deg) scale(0.7);
+            filter: blur(8px) brightness(0.7);
           }
           100% {
             opacity: 1;
-            transform: translateX(0) translateY(0) translateZ(0) 
-                       rotateX(0deg) rotateY(0deg) rotateZ(0deg) 
-                       scale(1);
-            filter: blur(0px) brightness(1) saturate(1);
+            transform: translateZ(0) rotateY(0deg) rotateX(0deg) scale(1);
+            filter: blur(0px) brightness(1);
           }
         }
         
-        /* Dramatic return animation */
-        @keyframes dramaticReturn {
+        @keyframes imageExit {
           0% {
             opacity: 1;
-            transform: translateX(0) translateY(0) translateZ(0) 
-                       rotateX(0deg) rotateY(0deg) rotateZ(0deg) 
-                       scale(1);
-            filter: blur(0px) brightness(1) saturate(1);
-          }
-          20% {
-            opacity: 0.9;
-            transform: translateX(-10px) translateY(10px) translateZ(25px) 
-                       rotateX(-3deg) rotateY(-3deg) rotateZ(-1deg) 
-                       scale(0.95);
-            filter: blur(2px) brightness(0.95) saturate(0.98);
+            transform: translateZ(0) rotateY(0deg) rotateX(0deg) scale(1);
+            filter: blur(0px) brightness(1);
           }
           50% {
-            opacity: 0.6;
-            transform: translateX(-45px) translateY(45px) translateZ(-120px) 
-                       rotateX(-12deg) rotateY(-12deg) rotateZ(-4deg) 
-                       scale(0.7);
-            filter: blur(5px) brightness(0.8) saturate(0.9);
-          }
-          75% {
-            opacity: 0.3;
-            transform: translateX(-90px) translateY(90px) translateZ(-250px) 
-                       rotateX(-20deg) rotateY(-20deg) rotateZ(-7deg) 
-                       scale(0.4);
-            filter: blur(10px) brightness(0.5) saturate(0.6);
+            opacity: 0.8;
+            transform: translateZ(-250px) rotateY(-20deg) rotateX(-10deg) scale(0.7);
+            filter: blur(8px) brightness(0.7);
           }
           100% {
             opacity: 0;
-            transform: translateX(-150px) translateY(150px) translateZ(-450px) 
-                       rotateX(-35deg) rotateY(-35deg) rotateZ(-12deg) 
-                       scale(0.15);
-            filter: blur(18px) brightness(0.2) saturate(0.3);
+            transform: translateZ(-1000px) rotateY(-50deg) rotateX(-30deg) scale(0.2);
+            filter: blur(20px) brightness(0.2);
           }
         }
         
-        /* Attractive floating animation during display */
-        @keyframes attractiveFloat {
-          0%, 100% { 
-            transform: translateX(0) translateY(0) translateZ(0) 
-                       rotateX(0deg) rotateY(0deg) 
-                       scale(1); 
-          }
-          25% { 
-            transform: translateX(2px) translateY(-3px) translateZ(8px) 
-                       rotateX(0.8deg) rotateY(-0.8deg) 
-                       scale(1.015); 
-          }
-          50% { 
-            transform: translateX(0) translateY(-5px) translateZ(12px) 
-                       rotateX(0deg) rotateY(0deg) 
-                       scale(1.02); 
-          }
-          75% { 
-            transform: translateX(-2px) translateY(-3px) translateZ(8px) 
-                       rotateX(-0.8deg) rotateY(0.8deg) 
-                       scale(1.015); 
-          }
+        @keyframes floatUpDown {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
         }
         
-        
-       
-        
-        /* COMPLETELY CLEAN IMAGE WRAPPER - NO BACKGROUNDS */
-        .image-wrapper {
-          position: relative;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          flex: 1;
-          min-height: 130px;
-          padding: 8px 8px 50px 8px;
-          overflow: visible;
-          background: none !important; /* Completely removed background */
-        }
-        
-        /* Remove any pseudo-elements from image wrapper */
-        .image-wrapper::before,
-        .image-wrapper::after {
-          display: none !important;
-        }
-        
-        /* Clean image display - no backgrounds */
-        .image-card img {
-          display: block;
-          border-radius: 8px;
-          max-width: 110%;
-          max-height: 110%;
-          width: auto;
+        .animated-image {
+          width: 100%;
           height: auto;
-          object-fit: contain;
-          transition: transform 0.3s ease;
-          animation: imageGlow 2.5s ease-in-out infinite alternate;
-          transform: scale(1);
-          background: none !important; /* Ensure no background on img */
+          border-radius: 16px;
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.1);
+          position: relative;
         }
         
-        @keyframes imageGlow {
-          0% { filter: brightness(1) contrast(1) saturate(1); }
-          100% { filter: brightness(1.03) contrast(1.03) saturate(1.05); }
-        }
-        
-        /* White Download Icon positioned at bottom */
         .download-icon {
           position: absolute;
-          bottom: 8px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 32px;
-          height: 32px;
+          top: 12px;
+          right: 12px;
+          width: 36px;
+          height: 36px;
           cursor: pointer;
-          background: rgba(255, 255, 255, 0.1) !important;
-          border: none !important;
+          background: rgba(0, 0, 0, 0.8);
           border-radius: 50%;
-          padding: 6px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: none !important;
-          z-index: 15;
-          transform-style: preserve-3d;
-          opacity: 0.8;
-          backdrop-filter: blur(8px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .download-icon:hover {
-          background: rgba(255, 255, 255, 0.2) !important;
-          transform: translateX(-50%) translateY(-2px) scale(1.1);
-          opacity: 1;
-          box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3) !important;
+          background: rgba(0, 0, 0, 0.9);
+          transform: scale(1.15);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
         }
         
         .download-icon:active {
-          transform: translateX(-50%) translateY(-1px) scale(1.05);
-          opacity: 0.9;
+          transform: scale(0.95);
         }
         
         .download-icon svg {
-          width: 100%;
-          height: 100%;
-          transition: all 0.3s ease;
-          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+          width: 20px;
+          height: 20px;
+          fill: white;
         }
         
-        .download-icon:hover svg {
-          animation: downloadBounce 0.6s ease-in-out infinite;
-          filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
-        }
-        
-        @keyframes downloadBounce {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-2px); }
-        }
-        
-        @media (max-width: 768px) {
-          .download-icon {
-            width: 28px;
-            height: 28px;
-            padding: 5px;
-          }
-        }
-        
-        @media (max-width: 480px) {
-          .download-icon {
-            width: 26px;
-            height: 26px;
-            padding: 4px;
-          }
-        }
-        
+        /* Enhanced Button Styles */
         .refresh-button {
           position: fixed;
-          bottom: 30px;
-          right: 30px;
+          bottom: 32px;
+          right: 32px;
           z-index: 1000;
-          padding: 12px 16px;
-          border-radius: 50px;
-          background: rgba(0, 255, 255, 0.1);
-          border: 1px solid rgba(0, 255, 255, 0.3);
-          color: rgba(0, 255, 255, 0.9);
-          font-size: 10px;
+          padding: 14px 20px;
+          border-radius: 28px;
+          background: rgba(20, 25, 25, 0.95);
+          border: 2px solid rgba(0, 255, 255, 0.4);
+          color: rgba(0, 255, 255, 0.95);
+          font-size: 11px;
           font-family: 'Courier New', monospace;
           font-weight: bold;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.6px;
           cursor: pointer;
           transition: all 0.3s ease;
-          backdrop-filter: blur(10px);
+          backdrop-filter: blur(25px);
+          text-shadow: 0 0 8px rgba(0, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         
         .refresh-button:hover {
-          background: rgba(0, 255, 255, 0.2);
-          border-color: rgba(0, 255, 255, 0.5);
-          transform: scale(1.05);
-          box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+          background: rgba(0, 255, 255, 0.15);
+          border-color: rgba(0, 255, 255, 0.6);
+          transform: scale(1.08);
+          box-shadow: 0 12px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
         }
         
-        /* Demo button for testing */
-        .demo-image-button {
+        .demo-button {
           position: fixed;
-          bottom: 90px;
-          right: 30px;
+          bottom: 100px;
+          right: 32px;
           z-index: 1000;
-          padding: 8px 12px;
-          border-radius: 25px;
-          background: rgba(255, 0, 255, 0.1);
-          border: 1px solid rgba(255, 0, 255, 0.3);
-          color: rgba(255, 0, 255, 0.9);
-          font-size: 8px;
+          padding: 10px 16px;
+          border-radius: 22px;
+          background: rgba(25, 20, 25, 0.95);
+          border: 2px solid rgba(255, 0, 255, 0.4);
+          color: rgba(255, 0, 255, 0.95);
+          font-size: 11px;
           font-family: 'Courier New', monospace;
           font-weight: bold;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.6px;
           cursor: pointer;
           transition: all 0.3s ease;
-          backdrop-filter: blur(10px);
+          backdrop-filter: blur(25px);
+          text-shadow: 0 0 8px rgba(255, 0, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         
-        .demo-image-button:hover {
-          background: rgba(255, 0, 255, 0.2);
-          border-color: rgba(255, 0, 255, 0.5);
-          transform: scale(1.05);
+        .demo-button:hover {
+          background: rgba(255, 0, 255, 0.15);
+          border-color: rgba(255, 0, 255, 0.6);
+          transform: scale(1.08);
+          box-shadow: 0 12px 40px rgba(255, 0, 255, 0.3), 0 0 20px rgba(255, 0, 255, 0.2);
         }
       `}</style>
 
-      {/* Connection Status Indicator */}
+      {/* Enhanced Connection Status Indicator */}
       <div className={`connection-status ${
         connectionState.error ? 'status-error' :
         connectionState.isConnecting ? 'status-connecting' :
@@ -902,67 +1375,34 @@ export const HeroSection = () => {
          connectionState.isConnected ? '● PICO ONLINE' : '◌ OFFLINE'}
       </div>
 
-      {/* Image Generation Indicator */}
-      {isGeneratingImage && (
-        <div className="image-generation-indicator">
-          ◐ GENERATING IMAGE...
-        </div>
-      )}
-
-      {/* Clean Corner Image Display - NO BLACK BACKGROUNDS */}
-      {showImageCorner && currentImage && (
-        <div 
-          className={`corner-image-container image-emerge-${imageAnimationState}`}
-          style={{
-            width: imageDimensions ? `${Math.min(Math.max(imageDimensions.width * 0.6, 200), 300)}px` : '300px',
-            height: imageDimensions ? `${Math.min(Math.max(imageDimensions.height * 0.6 + 50, 150), 450)}px` : '450px'
-          }}
-        >
-          <div className={`image-card ${imageDimensions && (imageDimensions.width < 200 || imageDimensions.height < 150) ? 'small-image' : ''}`}>
-            <div className="image-wrapper">
-              <img
-                src={currentImage.url}
-                alt={currentImage.prompt}
-                onLoad={handleImageLoad}
-                onError={(e) => {
-                  // Fallback image if the original fails to load
-                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTRweCIgZmlsbD0iIzAwZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkdFTkVSQVRFRCBJTUFHRTwvdGV4dD48L3N2Zz4=';
-                }}
-              />
-              
-              {/* White Download Icon at Bottom Center */}
-              <div 
-                className="download-icon"
-                onClick={() => downloadImage(currentImage.url, `pico-generated-${currentImage.id}.png`)}
-                title="Download Image"
-              >
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path 
-                    d="M20 15v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" 
-                    stroke="white" 
-                    strokeWidth="2.5" 
+      {/* Enhanced Animated Image Container */}
+      {showImage && generatedImage && (
+        <div className={`animated-image-container ${imageAnimationState}`}>
+          <img
+            src={generatedImage}
+            alt="Generated Image"
+            className="animated-image"
+          />
+          <div
+            className="download-icon"
+            onClick={() => downloadImage(generatedImage, `generated-image-${Date.now()}.png`)}
+            title="Download Image"
+          >
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 15v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
                     strokeLinecap="round" 
                     strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-            </div>
+                    fill="none"/>
+            </svg>
           </div>
         </div>
       )}
 
-      {/* Demo button for testing */}
-      <button
-        className="demo-image-button"
-        onClick={triggerDemoImage}
-        disabled={showImageCorner}
-      >
-        TEST IMG
-      </button>
-
       <section 
         className={`fixed inset-0 w-screen h-screen flex items-center justify-center overflow-hidden animated-bg transition-all duration-1000 select-none cursor-none ${
-          isListening || isConversing || isGeneratingImage
+          connectionState.isConnected && (isListening || isConversing)
             ? 'brightness-110 contrast-110' 
             : 'brightness-100'
         }`} 
@@ -980,7 +1420,7 @@ export const HeroSection = () => {
       >
         {/* Enhanced Ambient Background Elements - ANIMATED */}
         <div className={`absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none transition-opacity duration-1000 ${
-          isListening || isConversing || isGeneratingImage ? 'opacity-30 sm:opacity-40' : 'opacity-15 sm:opacity-20'
+          connectionState.isConnected && (isListening || isConversing) ? 'opacity-35 sm:opacity-45' : 'opacity-20 sm:opacity-25'
         }`}
         style={{
           userSelect: 'none',
@@ -993,11 +1433,11 @@ export const HeroSection = () => {
           <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none"
                style={{
                  backgroundImage: `
-                   linear-gradient(90deg, transparent 98%, rgba(0, 255, 255, 0.1) 100%),
-                   linear-gradient(0deg, transparent 98%, rgba(0, 255, 255, 0.1) 100%)
+                   linear-gradient(90deg, transparent 97%, rgba(0, 255, 255, 0.15) 100%),
+                   linear-gradient(0deg, transparent 97%, rgba(0, 255, 255, 0.15) 100%)
                  `,
                  backgroundSize: typeof window !== 'undefined' && window.innerWidth < 640 ? '50px 50px' : typeof window !== 'undefined' && window.innerWidth < 1024 ? '60px 60px' : '70px 70px',
-                 animation: `gridMove ${isListening || isConversing || isGeneratingImage ? '8s' : '15s'} linear infinite`,
+                 animation: `gridMove ${connectionState.isConnected && (isListening || isConversing) ? '8s' : '15s'} linear infinite`,
                  userSelect: 'none',
                  cursor: 'none'
                }}>
@@ -1008,14 +1448,14 @@ export const HeroSection = () => {
             {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 8 : 10)].map((_, i) => (
               <div
                 key={`stream-${i}`}
-                className={`absolute w-px overflow-hidden select-none pointer-events-none bg-gradient-to-b from-transparent via-neon-cyan/40 to-transparent transition-all duration-500 ${
-                  isListening || isConversing || isGeneratingImage ? 'via-neon-cyan/70 sm:via-neon-cyan/80' : 'via-neon-cyan/30 sm:via-neon-cyan/40'
+                className={`absolute w-px overflow-hidden select-none pointer-events-none bg-gradient-to-b from-transparent via-neon-cyan/50 to-transparent transition-all duration-500 ${
+                  connectionState.isConnected && (isListening || isConversing) ? 'via-neon-cyan/80 sm:via-neon-cyan/90' : 'via-neon-cyan/40 sm:via-neon-cyan/50'
                 }`}
                 style={{
                   left: `${i * (100 / (typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 8 : 10))}%`,
                   height: '100vh',
                   maxHeight: '100vh',
-                  animation: `dataStream ${isListening || isConversing || isGeneratingImage ? (2 + i * 0.2) : (3 + i * 0.4)}s linear infinite`,
+                  animation: `dataStream ${connectionState.isConnected && (isListening || isConversing) ? (2 + i * 0.2) : (3 + i * 0.4)}s linear infinite`,
                   animationDelay: `${i * 0.3}s`,
                   userSelect: 'none',
                   cursor: 'none'
@@ -1030,9 +1470,9 @@ export const HeroSection = () => {
               <div
                 key={`geo-${i}`}
                 className={`absolute border overflow-hidden select-none pointer-events-none transition-all duration-700 ${
-                  isListening || isConversing || isGeneratingImage
-                    ? 'border-neon-purple/40 animate-pulse' 
-                    : 'border-neon-purple/20'
+                  connectionState.isConnected && (isListening || isConversing)
+                    ? 'border-neon-purple/50 animate-pulse' 
+                    : 'border-neon-purple/30'
                 }`}
                 style={{
                   left: `${15 + (i * 12)}%`,
@@ -1044,7 +1484,7 @@ export const HeroSection = () => {
                   animationDelay: `${i * 0.4}s`,
                   animationDuration: `${5 + (i % 3) * 2}s`,
                   transform: `rotate(${i * 25}deg)`,
-                  animation: `geometricFloat ${isListening || isConversing || isGeneratingImage ? (5 + i) : (7 + i)}s ease-in-out infinite`,
+                  animation: `geometricFloat ${connectionState.isConnected && (isListening || isConversing) ? (5 + i) : (7 + i)}s ease-in-out infinite`,
                   userSelect: 'none',
                   cursor: 'none'
                 }}
@@ -1058,84 +1498,72 @@ export const HeroSection = () => {
                transformOrigin: 'center center'
              }}>
           
-          {/* Title - PERMANENTLY HIDDEN after first conversation */}
-          {!titleHasBeenHidden && (
+          {/* Enhanced Title - Only show when not connected or before first conversation */}
+          {!connectionState.isConnected || !titleHasBeenHidden ? (
             <div className={`animate-fade-in-up transition-all duration-1000 mb-1 sm:mb-2 md:mb-3 overflow-hidden select-none ${
-              isListening ? 'text-glow-enhanced' : ''
-            } ${isConversing ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}
+              connectionState.isConnected && isListening ? 'text-glow-enhanced' : ''
+            } ${connectionState.isConnected && isConversing ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}
                  style={{ 
                    userSelect: 'none',
                    WebkitUserSelect: 'none',
                    cursor: 'default'
                  }}>
               <h1 className={`cyber-font text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight transition-all duration-700 overflow-hidden select-none ${
-                isListening 
+                connectionState.isConnected && isListening 
                   ? 'text-glow-enhanced' 
-                  : 'text-glow'
+                  : 'text-glow'}
               }`} style={{ 
                 transformOrigin: 'center center',
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
-                cursor: 'default'
+                cursor: 'default',
+                color: '#ffffff',
+                textShadow: '0 0 20px rgba(0, 255, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.8)'
               }}>
                 HI I AM PICO
               </h1>
             </div>
-          )}
+          ) : null}
 
-          {/* Speech Bubble Conversation Area */}
-          {titleHasBeenHidden && (
+          {/* Enhanced Speech Bubble Conversation Area - Only show when connected */}
+          {connectionState.isConnected && titleHasBeenHidden && (
             <div className={`animate-fade-in-up transition-all duration-1000 mb-4 sm:mb-5 md:mb-6 overflow-visible ${
               isConversing ? 'opacity-100 translate-y-0' : 'opacity-100 translate-y-0'
             }`}>
-              <div className={`speech-bubble ${!isConversing && !isGeneratingImage ? 'speech-bubble-cyan' : ''} bg-gradient-to-r backdrop-blur-sm rounded-2xl p-4 sm:p-5 md:p-6 border max-w-lg mx-auto transition-all duration-700 overflow-hidden ${
-                isGeneratingImage
-                  ? 'from-neon-purple/25 to-pink-500/25 border-pink-500/50 shadow-lg animate-pulse'
-                  : isConversing 
-                    ? 'from-neon-purple/20 to-neon-blue/20 border-neon-purple/40 shadow-lg' 
-                    : 'from-neon-cyan/15 to-neon-blue/15 border-neon-cyan/35 shadow-md'
+              <div className={`speech-bubble ${!isConversing ? 'speech-bubble-cyan' : ''} bg-gradient-to-r backdrop-blur-lg rounded-2xl p-4 sm:p-5 md:p-6 border-2 max-w-lg mx-auto transition-all duration-700 overflow-hidden ${
+                isConversing 
+                  ? 'from-purple-900/30 to-blue-900/30 border-purple-400/50 shadow-2xl' 
+                  : 'from-cyan-900/25 to-blue-900/25 border-cyan-400/40 shadow-xl'
               }`}
               style={{ 
                 cursor: 'default',
-                boxShadow: isGeneratingImage
-                  ? '0 8px 32px rgba(255, 0, 255, 0.4), 0 0 20px rgba(255, 0, 255, 0.3)'
-                  : isConversing 
-                    ? '0 8px 32px rgba(128, 0, 255, 0.3), 0 0 20px rgba(128, 0, 255, 0.2)' 
-                    : '0 8px 32px rgba(0, 255, 255, 0.25), 0 0 20px rgba(0, 255, 255, 0.15)'
+                backgroundColor: isConversing ? 'rgba(40, 20, 60, 0.3)' : 'rgba(20, 40, 60, 0.25)',
+                boxShadow: isConversing 
+                  ? '0 12px 40px rgba(128, 0, 255, 0.4), 0 0 30px rgba(128, 0, 255, 0.3)' 
+                  : '0 12px 40px rgba(0, 255, 255, 0.35), 0 0 25px rgba(0, 255, 255, 0.25)'
               }}>
-                {isGeneratingImage ? (
+                {isConversing ? (
                   <div className="select-none">
-                    <p className="text-sm sm:text-base font-orbitron text-pink-400/95 leading-relaxed overflow-hidden select-text font-medium animate-pulse"
+                    <p className="text-sm sm:text-base font-orbitron leading-relaxed overflow-hidden select-text font-medium"
                        style={{ 
                          cursor: 'text',
                          userSelect: 'text',
                          WebkitUserSelect: 'text',
                          MozUserSelect: 'text',
-                         textShadow: '0 0 10px rgba(255, 0, 255, 0.4)'
-                       }}>
-                      "Creating your image... Please wait..."
-                    </p>
-                  </div>
-                ) : isConversing ? (
-                  <div className="select-none">
-                    {/* TYPING ANIMATION TEXT FROM BACKEND */}
-                    <p className="text-sm sm:text-base font-orbitron text-neon-purple/95 leading-relaxed overflow-hidden select-text font-medium"
-                       style={{ 
-                         cursor: 'text',
-                         userSelect: 'text',
-                         WebkitUserSelect: 'text',
-                         MozUserSelect: 'text',
-                         textShadow: '0 0 10px rgba(128, 0, 255, 0.3)'
+                         color: '#ffffff',
+                         textShadow: '0 0 15px rgba(128, 0, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8)'
                        }}>
                       "{typedText}
                       {isTyping && (
-                        <span className="animate-pulse text-neon-purple ml-1">|</span>
+                        <span className="animate-pulse ml-1" style={{ color: '#ff00ff' }}>|</span>
                       )}"
                     </p>
                     
-                    {/* Show backend metadata */}
                     {picoData && (picoData.mood || picoData.user_count) && (
-                      <div className="mt-2 text-xs text-neon-purple/60 font-mono">
+                      <div className="mt-2 text-xs font-mono" style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)'
+                      }}>
                         {picoData.mood && `Mood: ${picoData.mood}`}
                         {picoData.mood && picoData.user_count && ' • '}
                         {picoData.user_count && `Users: ${picoData.user_count}`}
@@ -1144,20 +1572,18 @@ export const HeroSection = () => {
                   </div>
                 ) : (
                   <div className="select-none">
-                    {/* READY MESSAGE WITH DYNAMIC GREETING */}
-                    <p className="text-sm sm:text-base font-orbitron text-neon-cyan/95 leading-relaxed overflow-hidden select-text font-medium"
+                    <p className="text-sm sm:text-base font-orbitron leading-relaxed overflow-hidden select-text font-medium"
                        style={{ 
                          cursor: 'text',
                          userSelect: 'text',
                          WebkitUserSelect: 'text',
                          MozUserSelect: 'text',
-                         textShadow: '0 0 10px rgba(0, 255, 255, 0.3)'
+                         color: '#ffffff',
+                         textShadow: '0 0 15px rgba(0, 255, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8)'
                        }}>
                       {picoData?.time_greeting 
-                        ? `"${picoData.time_greeting} Ready for your next question..."` 
-                        : connectionState.isConnected 
-                          ? '"Ready for your next question..."'
-                          : '"Establishing connection..."'
+                        ? `${picoData.time_greeting} Ready for your next question...` 
+                        : '"Ready for your next question..."'
                       }
                     </p>
                   </div>
@@ -1168,7 +1594,7 @@ export const HeroSection = () => {
 
           {/* Robot Avatar Container - BIGGER SIZE */}
           <div className={`relative mb-1 sm:mb-2 md:mb-3 overflow-visible select-none ${
-            isConversing ? 'scale-105' : isGeneratingImage ? 'scale-110' : titleHasBeenHidden ? 'scale-102' : 'scale-100'
+            connectionState.isConnected && isConversing ? 'scale-105' : connectionState.isConnected && titleHasBeenHidden ? 'scale-102' : 'scale-100'
           }`} style={{ 
             width: '850px',
             height: '800px',
@@ -1179,44 +1605,42 @@ export const HeroSection = () => {
             transition: 'transform 0.3s ease'
           }}>
             
-            {/* Animated Background Layer Behind Spline Scene */}
-            {(isListening || isConversing || isGeneratingImage) && (
+            {/* Enhanced Animated Background Layer Behind Spline Scene */}
+            {connectionState.isConnected && (isListening || isConversing) && (
               <div 
                 className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
                 style={{
-                  background: `radial-gradient(circle at center, rgba(${isGeneratingImage ? '255, 0, 255' : isConversing ? '128, 0, 255' : '0, 255, 255'}, 0.15), transparent 70%)`,
+                  background: `radial-gradient(circle at center, rgba(${isConversing ? '128, 0, 255' : '0, 255, 255'}, 0.2), transparent 70%)`,
                   animation: 'floating 4s ease-in-out infinite',
                   borderRadius: '50%',
-                  transform: 'scale(1.2)',
-                  filter: `blur(20px)`
+                  transform: 'scale(1.3)',
+                  filter: `blur(25px)`
                 }}
               />
             )}
 
-            {/* Data Stream Effects */}
-            {(isListening || isConversing || isGeneratingImage) && (
+            {/* Enhanced Data Stream Effects */}
+            {connectionState.isConnected && (isListening || isConversing) && (
               <div className="absolute inset-0 z-1 pointer-events-none overflow-hidden select-none">
                 {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : 8)].map((_, i) => (
                   <div
                     key={`stream-${i}`}
                     className={`absolute text-xs sm:text-sm font-mono animate-float overflow-hidden select-none pointer-events-none ${
-                      isGeneratingImage ? 'text-pink-400/80' : isConversing ? 'text-neon-purple/70' : 'text-neon-blue/60 sm:text-neon-blue/70'
+                      isConversing ? 'text-purple-300' : 'text-cyan-300'
                     }`}
                     style={{
                       left: `${10 + (i * 8)}%`,
                       top: `${10 + (i % 4) * 20}%`,
                       animationDelay: `${i * 0.25}s`,
                       animationDuration: `${2.5 + (i % 3) * 0.5}s`,
-                      textShadow: '0 0 8px currentColor',
+                      textShadow: '0 0 12px currentColor, 0 2px 4px rgba(0, 0, 0, 0.8)',
                       userSelect: 'none',
                       cursor: 'none'
                     }}
                   >
-                    {isGeneratingImage 
-                      ? ['IMG', 'GEN', 'ART', 'PIX', 'DRAW', 'CREATE'][i] || 'AI'
-                      : isConversing 
-                        ? ['TALK', 'CHAT', 'CONV', 'RESP', 'WORD', 'SPEAK'][i] || 'AI'
-                        : [][i] || ""
+                    {isConversing 
+                      ? ['TALK', 'CHAT', 'CONV', 'RESP', 'WORD', 'SPEAK'][i] || 'AI'
+                      : ""
                     }
                   </div>
                 ))}
@@ -1244,27 +1668,31 @@ export const HeroSection = () => {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   />
                   
-                  {/* Loading indicator */}
                   {!splineLoaded && (
                     <div className="absolute inset-0 flex items-center justify-center bg-transparent">
-                      <div className="text-neon-cyan font-orbitron text-sm animate-pulse">
+                      <div className="font-orbitron text-sm animate-pulse" style={{
+                        color: '#00ffff',
+                        textShadow: '0 0 15px rgba(0, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8)'
+                      }}>
                         Loading Pico...
                       </div>
                     </div>
                   )}
                 </>
               ) : (
-                /* Fallback when Spline fails to load - BIGGER */
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-96 h-96 rounded-full bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 border-2 border-neon-cyan/30 flex items-center justify-center backdrop-blur-sm">
-                    <span className="text-neon-cyan font-orbitron text-4xl font-bold animate-pulse">PICO</span>
+                  <div className="w-96 h-96 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border-2 border-cyan-300/30 flex items-center justify-center backdrop-blur-sm">
+                    <span className="font-orbitron text-4xl font-bold animate-pulse" style={{
+                      color: '#00ffff',
+                      textShadow: '0 0 20px rgba(0, 255, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.8)'
+                    }}>PICO</span>
                   </div>
                 </div>
               )}
             </div>
             
-            {/* Audio Wave Visualization */}
-            {(isListening || isConversing || isGeneratingImage) && (
+            {/* Enhanced Audio Wave Visualization */}
+            {connectionState.isConnected && (isListening || isConversing) && (
               <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 transform -translate-x-1/2 overflow-hidden select-none pointer-events-none z-20" 
                    style={{ 
                      perspective: '200px',
@@ -1275,17 +1703,15 @@ export const HeroSection = () => {
                     <div
                       key={index}
                       className={`rounded-full transition-all duration-100 overflow-hidden select-none pointer-events-none ${
-                        isGeneratingImage
-                          ? 'bg-gradient-to-t from-pink-500 via-purple-500 to-neon-purple'
-                          : isConversing 
-                            ? 'bg-gradient-to-t from-neon-purple via-neon-blue to-neon-cyan' 
-                            : 'bg-gradient-to-t from-neon-cyan via-neon-blue to-neon-purple'
+                        isConversing 
+                          ? 'bg-gradient-to-t from-purple-500 via-blue-400 to-cyan-300' 
+                          : 'bg-gradient-to-t from-cyan-500 via-blue-400 to-purple-300'
                       }`}
                       style={{
-                        width: '3px',
-                        height: `${level * 30 + 10}px`,
-                        maxHeight: '45px',
-                        boxShadow: `0 0 10px hsl(var(${isGeneratingImage ? '--pink-500' : isConversing ? '--neon-purple' : '--neon-cyan'})/0.8)`,
+                        width: '4px',
+                        height: `${level * 35 + 12}px`,
+                        maxHeight: '50px',
+                        boxShadow: `0 0 15px ${isConversing ? 'rgba(128, 0, 255, 0.8)' : 'rgba(0, 255, 255, 0.8)'}, 0 2px 6px rgba(0, 0, 0, 0.5)`,
                         userSelect: 'none',
                         cursor: 'none'
                       }}
@@ -1296,33 +1722,42 @@ export const HeroSection = () => {
             )}
           </div>
 
-          {/* Status Indicator - Enhanced with Connection Info */}
-          <div className={`flex items-center justify-center space-x-2 animate-fade-in-up transition-all duration-500 overflow-hidden select-none ${
-            isListening || isConversing || isGeneratingImage ? 'scale-102 sm:scale-105' : 'scale-100'
+          {/* Enhanced Status Indicator - Enhanced with Connection Info */}
+          <div className={`flex items-center justify-center space-x-3 animate-fade-in-up transition-all duration-500 overflow-hidden select-none ${
+            connectionState.isConnected && (isListening || isConversing) ? 'scale-105 sm:scale-108' : 'scale-100'
           }`} style={{ 
             animationDelay: '0.9s',
             cursor: 'default',
             transform: 'translateY(20px)',
-            marginTop: '10px'
+            marginTop: '15px'
           }}>
-            <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-500 overflow-hidden select-none ${
-              isGeneratingImage ? 'bg-pink-500 pulse-glow-enhanced' :
-              isConversing ? 'bg-neon-purple pulse-glow-enhanced' :
-              isListening ? 'bg-neon-cyan pulse-glow-enhanced' : 
-              connectionState.isConnected ? 'bg-neon-cyan pulse-glow' :
+            <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-all duration-500 overflow-hidden select-none ${
+              connectionState.isConnected && isConversing ? 'bg-purple-400 pulse-glow-enhanced' :
+              connectionState.isConnected && isListening ? 'bg-cyan-400 pulse-glow-enhanced' : 
+              connectionState.isConnected ? 'bg-cyan-400 pulse-glow' :
               connectionState.isConnecting ? 'bg-yellow-400 pulse-glow' : 'bg-red-400 pulse-glow'
-            }`}></div>
-            <span className={`text-xs sm:text-sm font-orbitron transition-all duration-500 overflow-hidden select-none ${
-              isGeneratingImage ? 'text-pink-500 font-bold' :
-              isConversing ? 'text-neon-purple font-bold' :
-              isListening ? 'text-neon-cyan font-bold' : 
-              connectionState.isConnected ? 'text-neon-cyan' :
-              connectionState.isConnecting ? 'text-yellow-400' : 'text-red-400'
+            }`} style={{
+              boxShadow: connectionState.isConnected && isConversing ? '0 0 15px rgba(128, 0, 255, 0.8)' :
+                         connectionState.isConnected && isListening ? '0 0 15px rgba(0, 255, 255, 0.8)' :
+                         connectionState.isConnected ? '0 0 12px rgba(0, 255, 255, 0.6)' :
+                         connectionState.isConnecting ? '0 0 12px rgba(255, 255, 0, 0.6)' : '0 0 12px rgba(255, 0, 0, 0.6)'
+            }}></div>
+            <span className={`text-sm sm:text-base font-orbitron transition-all duration-500 overflow-hidden select-none font-medium ${
+              connectionState.isConnected && isConversing ? 'text-purple-200' :
+              connectionState.isConnected && isListening ? 'text-cyan-200' : 
+              connectionState.isConnected ? 'text-cyan-300' :
+              connectionState.isConnecting ? 'text-yellow-300' : 'text-red-300'
             }`}
-            style={{ cursor: 'default' }}>
-              {isGeneratingImage ? 'Pico Creating Image...' :
-               isConversing ? 'Pico Speaking...' : 
-               isListening ? 'Pico Listening...' : 
+            style={{ 
+              cursor: 'default',
+              textShadow: connectionState.isConnected && isConversing ? '0 0 12px rgba(128, 0, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8)' :
+                         connectionState.isConnected && isListening ? '0 0 12px rgba(0, 255, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8)' :
+                         connectionState.isConnected ? '0 0 10px rgba(0, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8)' :
+                         connectionState.isConnecting ? '0 0 10px rgba(255, 255, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8)' : 
+                         '0 0 10px rgba(255, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8)'
+            }}>
+              {connectionState.isConnected && isConversing ? 'Pico Speaking...' : 
+               connectionState.isConnected && isListening ? 'Pico Listening...' : 
                connectionState.isConnected ? 'Pico System Online' :
                connectionState.isConnecting ? 'Connecting to Pico...' :
                connectionState.error ? `Connection Error: ${connectionState.error}` : 'Pico Offline'}
@@ -1330,7 +1765,26 @@ export const HeroSection = () => {
           </div>
         </div>
       </section>
-     
+
+      {/* Enhanced Manual Refresh Button (only show when connected) */}
+      {connectionState.isConnected && (
+        <button 
+          onClick={requestNewGreeting}
+          className="refresh-button"
+          title="Request new greeting from Pico"
+        >
+          ⟲ Refresh Greeting
+        </button>
+      )}
+
+      {/* Enhanced Demo Image Button for Testing */}
+      <button 
+        onClick={triggerDemoImage}
+        className="demo-button"
+        title="Test image animation"
+      >
+        📷 Test Image
+      </button>
     </>
   );
 };
