@@ -27,23 +27,21 @@ const EnhancedWeatherWidget = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showScrollbar, setShowScrollbar] = useState(false);
-  const [showContainer, setShowContainer] = useState(true); // Add new state for container visibility
+  const [showContainer, setShowContainer] = useState(true);
 
   // Modified useEffect for scrollbar and container management
   useEffect(() => {
     if (['Hourly', 'Daily', 'Precipitation'].includes(activeTab)) {
       setShowScrollbar(true);
-      setShowContainer(true); // Show container when tab becomes active
+      setShowContainer(true);
       const timer = setTimeout(() => {
-        setShowScrollbar(false); // Hide scrollbar first
-        // After scrollbar animation completes, hide the entire container
+        setShowScrollbar(false);
         setTimeout(() => {
           setShowContainer(false);
-        }, 500); // 500ms matches the CSS transition duration
+        }, 500);
       }, 15000);
       return () => clearTimeout(timer);
     } else {
-      // Reset states when switching to other tabs
       setShowContainer(true);
       setShowScrollbar(false);
     }
@@ -52,27 +50,27 @@ const EnhancedWeatherWidget = () => {
   // Get weather icon based on weather code
   const getWeatherIcon = (weatherCode, isDay = true) => {
     const iconMap = {
-      0: isDay ? '☀️' : '🌙', // Clear sky
-      1: isDay ? '🌤️' : '🌙', // Mainly clear
-      2: '⛅', // Partly cloudy
-      3: '☁️', // Overcast
-      45: '🌫️', // Fog
-      48: '🌫️', // Depositing rime fog
-      51: '🌦️', // Light drizzle
-      53: '🌦️', // Moderate drizzle
-      55: '🌦️', // Dense drizzle
-      61: '🌧️', // Slight rain
-      63: '🌧️', // Moderate rain
-      65: '🌧️', // Heavy rain
-      71: '🌨️', // Slight snow
-      73: '❄️', // Moderate snow
-      75: '❄️', // Heavy snow
-      80: '🌦️', // Slight rain showers
-      81: '🌧️', // Moderate rain showers
-      82: '⛈️', // Violent rain showers
-      95: '⛈️', // Thunderstorm
-      96: '⛈️', // Thunderstorm with hail
-      99: '⛈️', // Thunderstorm with heavy hail
+      0: isDay ? '☀️' : '🌙',
+      1: isDay ? '🌤️' : '🌙',
+      2: '⛅',
+      3: '☁️',
+      45: '🌫️',
+      48: '🌫️',
+      51: '🌦️',
+      53: '🌦️',
+      55: '🌦️',
+      61: '🌧️',
+      63: '🌧️',
+      65: '🌧️',
+      71: '🌨️',
+      73: '❄️',
+      75: '❄️',
+      80: '🌦️',
+      81: '🌧️',
+      82: '⛈️',
+      95: '⛈️',
+      96: '⛈️',
+      99: '⛈️',
     };
     return iconMap[weatherCode] || '🌤️';
   };
@@ -96,10 +94,8 @@ const EnhancedWeatherWidget = () => {
     try {
       setLoading(true);
       
-      // Get location name
       const locationName = await getLocationName(lat, lon);
       
-      // Get current and forecast weather
       const response = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&hourly=precipitation,temperature_2m&timezone=auto&forecast_days=7`
       );
@@ -110,7 +106,6 @@ const EnhancedWeatherWidget = () => {
         setWeatherData(data);
         setLocation({ lat, lon, name: locationName });
         
-        // Process precipitation data for chart
         const dailyPrecipitation = data.daily.precipitation_sum.slice(0, 7).map((precip, index) => ({
           day: ['Today', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'][index] || 'Day',
           amount: precip || 0
@@ -153,7 +148,7 @@ const EnhancedWeatherWidget = () => {
     if (location.lat && location.lon) {
       const interval = setInterval(() => {
         fetchWeatherData(location.lat, location.lon);
-      }, 600000); // 10 minutes
+      }, 600000);
       
       return () => clearInterval(interval);
     }
@@ -181,7 +176,6 @@ const EnhancedWeatherWidget = () => {
   const weatherCode = weatherData?.current_weather?.weathercode;
   const isDay = weatherData?.current_weather?.is_day;
   
-  // Get next rain prediction
   const getNextRainPrediction = () => {
     if (!weatherData?.daily) return '';
     
@@ -199,7 +193,6 @@ const EnhancedWeatherWidget = () => {
   return (
     <>
       <div className="weather-widget-enhanced">
-        {/* Header */}
         <div className="weather-header">
           <div className="location-info">
             <span className="location-icon">📍</span>
@@ -207,7 +200,6 @@ const EnhancedWeatherWidget = () => {
           </div>
         </div>
 
-        {/* Main Weather Display */}
         <div className="weather-main">
           <div className="weather-icon-large">
             {getWeatherIcon(weatherCode, isDay)}
@@ -223,7 +215,6 @@ const EnhancedWeatherWidget = () => {
           </div>
         </div>
 
-        {/* Tab Navigation */}
         <div className="weather-tabs">
           {['Hourly', 'Daily', 'Precipitation'].map((tab) => (
             <button
@@ -236,7 +227,6 @@ const EnhancedWeatherWidget = () => {
           ))}
         </div>
 
-        {/* Precipitation Chart - Updated with showContainer condition */}
         {activeTab === 'Precipitation' && showContainer && (
           <div className={`precipitation-chart scrollbar-container ${showScrollbar ? 'show-scrollbar' : 'hide-scrollbar'}`}>
             <div className="chart-container">
@@ -263,7 +253,6 @@ const EnhancedWeatherWidget = () => {
           </div>
         )}
 
-        {/* Daily Forecast - Updated with showContainer condition */}
         {activeTab === 'Daily' && weatherData?.daily && showContainer && (
           <div className={`daily-forecast scrollbar-container ${showScrollbar ? 'show-scrollbar' : 'hide-scrollbar'}`}>
             {weatherData.daily.time.slice(0, 7).map((date, index) => (
@@ -283,7 +272,6 @@ const EnhancedWeatherWidget = () => {
           </div>
         )}
 
-        {/* Hourly Forecast - Updated with showContainer condition */}
         {activeTab === 'Hourly' && weatherData?.hourly && showContainer && (
           <div className={`hourly-forecast scrollbar-container ${showScrollbar ? 'show-scrollbar' : 'hide-scrollbar'}`}>
             {Array.from({ length: 12 }, (_, i) => {
@@ -308,6 +296,166 @@ const EnhancedWeatherWidget = () => {
       </div>
 
       <style jsx>{`
+        /* COMPREHENSIVE RESPONSIVE DESIGN - MOBILE FIRST */
+        
+        /* Base Mobile First - Extra Small Screens (320px - 479px) */
+        @media (max-width: 479px) {
+          .weather-widget-enhanced {
+            width: 95vw !important;
+            bottom: 8px !important;
+            left: 2.5vw !important;
+            right: 2.5vw !important;
+            max-width: 280px !important;
+          }
+          
+          .weather-header {
+            padding: 1px 1px 2px !important;
+          }
+          
+          .location-info {
+            font-size: 13px !important;
+          }
+          
+          .weather-main {
+            padding: 16px !important;
+            gap: 1px !important;
+          }
+          
+          .temperature-main {
+            font-size: 32px !important;
+          }
+          
+          .weather-icon-large {
+            font-size: 32px !important;
+          }
+          
+          .rain-prediction {
+            font-size: 9px !important;
+            padding: 6px 8px !important;
+          }
+          
+          .weather-tabs {
+            padding: 10px 8px !important;
+            gap: 1px !important;
+          }
+          
+          .weather-tab {
+            font-size: 10px !important;
+            padding: 8px 4px !important;
+          }
+          
+          .daily-forecast, .hourly-forecast, .precipitation-chart {
+            padding: 10px 16px 16px !important;
+            max-height: 140px !important;
+          }
+        }
+        
+        /* Small Screens - Mobile (480px - 767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .weather-widget-enhanced {
+            width: 92vw !important;
+            bottom: 10px !important;
+            left: 4vw !important;
+            right: 4vw !important;
+            max-width: 300px !important;
+          }
+          
+          .temperature-main {
+            font-size: 36px !important;
+          }
+          
+          .weather-icon-large {
+            font-size: 36px !important;
+          }
+          
+          .weather-tabs {
+            padding: 0 12px !important;
+            gap: 2px !important;
+          }
+          
+          .weather-tab {
+            font-size: 11px !important;
+            padding: 10px 6px !important;
+          }
+          
+          .daily-forecast, .hourly-forecast, .precipitation-chart {
+            max-height: 160px !important;
+          }
+        }
+        
+        /* Medium Screens - Tablet Portrait (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .weather-widget-enhanced {
+            width: 320px !important;
+            bottom: 15px !important;
+            left: 15px !important;
+          }
+          
+          .temperature-main {
+            font-size: 38px !important;
+          }
+          
+          .weather-icon-large {
+            font-size: 38px !important;
+          }
+          
+          .daily-forecast, .hourly-forecast, .precipitation-chart {
+            max-height: 180px !important;
+          }
+        }
+        
+        /* Large Screens - Desktop (1024px+) */
+        @media (min-width: 1024px) {
+          .weather-widget-enhanced {
+            width: 320px !important;
+            bottom: 10px !important;
+            left: 10px !important;
+          }
+          
+          .temperature-main {
+            font-size: 40px !important;
+          }
+          
+          .weather-icon-large {
+            font-size: 40px !important;
+          }
+          
+          .daily-forecast, .hourly-forecast, .precipitation-chart {
+            max-height: 210px !important;
+          }
+        }
+        
+        /* Ultra Wide Screens (1920px+) */
+        @media (min-width: 1920px) {
+          .weather-widget-enhanced {
+            width: 350px !important;
+            bottom: 20px !important;
+            left: 20px !important;
+          }
+          
+          .temperature-main {
+            font-size: 44px !important;
+          }
+          
+          .weather-icon-large {
+            font-size: 44px !important;
+          }
+        }
+        
+        /* Landscape Orientation */
+        @media (max-height: 500px) and (orientation: landscape) {
+          .weather-widget-enhanced {
+            width: 280px !important;
+            bottom: 5px !important;
+            left: 5px !important;
+          }
+          
+          .daily-forecast, .hourly-forecast, .precipitation-chart {
+            max-height: 120px !important;
+          }
+        }
+
+        /* BASE STYLES */
         .weather-widget-enhanced {
           position: fixed;
           bottom: 10px;
@@ -322,6 +470,7 @@ const EnhancedWeatherWidget = () => {
           overflow: hidden;
           z-index: 1000;
           border: 2px solid rgb(12, 114, 117);
+          box-sizing: border-box;
         }
 
         .weather-widget-enhanced.loading,
@@ -349,7 +498,7 @@ const EnhancedWeatherWidget = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 18px 22px 2px;
+          padding: 5px 22px 2px;
           background: rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(10px);
         }
@@ -358,6 +507,7 @@ const EnhancedWeatherWidget = () => {
           display: flex;
           align-items: center;
           gap: 8px;
+          
           font-size: 15px;
           font-weight: 600;
           color: #ffffff;
@@ -366,6 +516,7 @@ const EnhancedWeatherWidget = () => {
 
         .location-icon {
           font-size: 14px;
+          
           filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
         }
 
@@ -403,12 +554,12 @@ const EnhancedWeatherWidget = () => {
           gap: 7px;
           font-size: 10px;
           font-weight: 500;
-          background: rgba(30, 144, 255, 0.25);
+          background: rgba(30, 191, 255, 0.25);
           color: #ffffff;
           padding: 8px 8px;
-          border-radius: 22px;
-          max-width: 80%;
-          border: 1px solid rgba(30, 144, 255, 0.3);
+          border-radius: 20px;
+          max-width: 79%;
+          border: 1px solid rgb(12, 114, 117);
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
@@ -423,11 +574,12 @@ const EnhancedWeatherWidget = () => {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          font-size: clamp(9px, 1vw, 10px);
         }
 
         .weather-tabs {
           display: flex;
-          padding: 0 22px;
+          padding: 10px 22px;
           gap: 3px;
           background: rgba(255, 255, 255, 0.03);
         }
@@ -447,9 +599,9 @@ const EnhancedWeatherWidget = () => {
         }
 
         .weather-tab.active {
-          background: rgba(9, 166, 251, 0.82);
+          background: rgb(12, 114, 117);
           color: #ffffff;
-          box-shadow: 0 2px 8px rgba(13, 123, 197, 0.89);
+          box-shadow: 1px 1px 0.5px rgba(119, 229, 233, 0.81);
         }
 
         .weather-tab:hover:not(.active) {
@@ -457,11 +609,10 @@ const EnhancedWeatherWidget = () => {
           color: rgba(255, 255, 255, 0.9);
         }
 
-        /* Data container styles with transition for smooth hiding */
         .precipitation-chart {
           padding: 22px;
           height: 130px;
-          background: rgba(255, 255, 255, 0.02);
+          background: rgba(3, 36, 46, 0.14);
           transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
@@ -515,11 +666,11 @@ const EnhancedWeatherWidget = () => {
         }
 
         .precipitation-bar {
-          width: 18px;
+          width: 10px;
           min-height: 6px;
-          border-radius: 3px;
+          border-radius: 2px;
           transition: all 0.4s ease;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 2px 6px rgba(13, 183, 251, 0.4);
         }
 
         .day-label {
@@ -610,7 +761,6 @@ const EnhancedWeatherWidget = () => {
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
-        /* Hide scrollbar completely */
         .scrollbar-container::-webkit-scrollbar {
           display: none;
         }
@@ -619,26 +769,15 @@ const EnhancedWeatherWidget = () => {
           -ms-overflow-style: none;
         }
 
-        /* Container fade out animation */
         .hide-scrollbar {
           opacity: 0;
           transform: translateY(10px);
           pointer-events: none;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 640px) {
-          .weather-widget-enhanced {
-            width: 300px;
-          }
-          
-          .temperature-main {
-            font-size: 46px;
-          }
-          
-          .weather-icon-large {
-            font-size: 44px;
-          }
+        /* Universal responsive utilities */
+        .location-name {
+          font-size: clamp(13px, 1.5vw, 15px);
         }
       `}</style>
     </>
@@ -651,13 +790,11 @@ export const HeroSection = () => {
   const [titleHasBeenHidden, setTitleHasBeenHidden] = useState(false);
   const [audioLevels, setAudioLevels] = useState([0.3, 0.7, 0.5, 0.9, 0.4, 0.8, 0.2]);
   
-  // WebSocket and dynamic text states
   const [typedText, setTypedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [fullText, setFullText] = useState("Hello! I'm Pico. How can I assist you today?");
   const [picoData, setPicoData] = useState<PicoMessage | null>(null);
   
-  // Image animation states
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [showImage, setShowImage] = useState(false);
   const [imageAnimationState, setImageAnimationState] = useState<'entering' | 'visible' | 'exiting' | 'hidden'>('hidden');
@@ -665,7 +802,6 @@ export const HeroSection = () => {
   const imageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Connection management states
   const [connectionState, setConnectionState] = useState<ConnectionState>({
     isConnected: false,
     isConnecting: false,
@@ -673,14 +809,11 @@ export const HeroSection = () => {
     reconnectAttempts: 0
   });
   
-  // Spline loading states
   const [splineLoaded, setSplineLoaded] = useState(false);
   const [splineError, setSplineError] = useState(false);
   
-  // Clock state
   const [clockTime, setClockTime] = useState('');
   
-  // WebSocket refs and constants
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -691,7 +824,6 @@ export const HeroSection = () => {
   const HEARTBEAT_INTERVAL = 30000;
   const RECONNECT_INTERVALS = [1000, 2000, 4000, 8000, 16000];
 
-  // Cleanup function
   const cleanup = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
@@ -726,7 +858,6 @@ export const HeroSection = () => {
     }
   }, []);
 
-  // Send message to WebSocket
   const sendMessage = useCallback((message: object) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       try {
@@ -740,7 +871,6 @@ export const HeroSection = () => {
     return false;
   }, []);
 
-  // Download image function
   const downloadImage = useCallback(async (imageUrl: string, filename: string) => {
     try {
       const response = await fetch(imageUrl);
@@ -758,7 +888,6 @@ export const HeroSection = () => {
     }
   }, []);
 
-  // Show animated image with proper timeout cleanup and exit animation
   const showAnimatedImage = useCallback((imageUrl: string) => {
     console.log('Starting image animation');
     
@@ -795,13 +924,11 @@ export const HeroSection = () => {
     }, 2000);
   }, []);
 
-  // Demo function to test image animation
   const triggerDemoImage = useCallback(() => {
     const demoImageUrl = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&crop=face';
     showAnimatedImage(demoImageUrl);
   }, [showAnimatedImage]);
 
-  // Start heartbeat mechanism
   const startHeartbeat = useCallback(() => {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
@@ -814,7 +941,6 @@ export const HeroSection = () => {
     }, HEARTBEAT_INTERVAL);
   }, [sendMessage]);
 
-  // Connect to WebSocket with reconnection logic
   const connectWebSocket = useCallback(() => {
     if (isUnmountedRef.current) return;
     
@@ -952,12 +1078,10 @@ export const HeroSection = () => {
     }
   }, [connectionState.isConnected, connectionState.isConnecting, connectionState.reconnectAttempts, cleanup, startHeartbeat, sendMessage, showAnimatedImage]);
 
-  // Request new greeting from backend
   const requestNewGreeting = useCallback(() => {
     sendMessage({ action: 'request_greeting' });
   }, [sendMessage]);
 
-  // Clock update effect - updates every second
   useEffect(() => {
     const updateClock = () => {
       const time = new Date();
@@ -973,7 +1097,6 @@ export const HeroSection = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Initialize WebSocket connection
   useEffect(() => {
     isUnmountedRef.current = false;
     connectWebSocket();
@@ -984,7 +1107,6 @@ export const HeroSection = () => {
     };
   }, [connectWebSocket, cleanup]);
 
-  // Auto-refresh greeting every 30 seconds
   useEffect(() => {
     if (!connectionState.isConnected || isConversing) return;
 
@@ -995,7 +1117,6 @@ export const HeroSection = () => {
     return () => clearInterval(interval);
   }, [connectionState.isConnected, isConversing, requestNewGreeting]);
 
-  // Effect to hide image after 10 seconds from demo button click
   useEffect(() => {
     if (demoImageStartTime) {
       const timeSinceDemo = Date.now() - demoImageStartTime;
@@ -1017,7 +1138,6 @@ export const HeroSection = () => {
     }
   }, [demoImageStartTime]);
 
-  // Typing animation effect - only when connected
   useEffect(() => {
     if (connectionState.isConnected && isTyping && isConversing && fullText) {
       let currentIndex = 0;
@@ -1035,7 +1155,6 @@ export const HeroSection = () => {
     }
   }, [connectionState.isConnected, isTyping, isConversing, fullText]);
 
-  // Audio level animation - only when connected
   useEffect(() => {
     let animationFrame: number;
     
@@ -1056,7 +1175,6 @@ export const HeroSection = () => {
     };
   }, [connectionState.isConnected, isListening, isConversing]);
 
-  // Cleanup timeout on component unmount
   useEffect(() => {
     return () => {
       if (imageTimeoutRef.current) {
@@ -1070,7 +1188,6 @@ export const HeroSection = () => {
     };
   }, []);
 
-  // Spline event handlers
   const onSplineLoad = () => {
     setSplineLoaded(true);
     setSplineError(false);
@@ -1082,17 +1199,235 @@ export const HeroSection = () => {
 
   return (
     <>
-      {/* Enhanced Real-time Clock */}
       <div className="clock">
         {clockTime || '00:00:00'}
       </div>
 
-      {/* Enhanced Weather Widget */}
       <EnhancedWeatherWidget />
 
-      {/* Enhanced CSS with better visibility and contrast */}
       <style jsx>{`
-        /* Enhanced Clock styles with better visibility */
+        /* COMPREHENSIVE RESPONSIVE DESIGN FOR ALL COMPONENTS */
+        
+        /* Extra Small Screens (320px - 479px) */
+        @media (max-width: 479px) {
+          .clock {
+            font-size: 14px !important;
+            padding: 8px 12px !important;
+            top: 8px !important;
+            left: 8px !important;
+          }
+          
+          .connection-status {
+            top: 16px !important;
+            right: 16px !important;
+            padding: 8px 12px !important;
+            font-size: 9px !important;
+          }
+          
+          .animated-image-container {
+            width: 85vw !important;
+            max-width: 280px !important;
+            right: 2.5vw !important;
+            top: 70px !important;
+          }
+          
+          .refresh-button {
+            font-size: 9px !important;
+            padding: 8px 12px !important;
+            bottom: 16px !important;
+            right: 2.5vw !important;
+          }
+          
+          .demo-button {
+            font-size: 9px !important;
+            padding: 8px 12px !important;
+            bottom: 70px !important;
+            right: 2.5vw !important;
+          }
+          
+          .cyber-font {
+            font-size: clamp(14px, 4vw, 20px) !important;
+          }
+          
+          .speech-bubble {
+            max-width: 85vw !important;
+            margin: 0 auto !important;
+          }
+          
+          .speech-bubble p {
+            font-size: 12px !important;
+          }
+          
+          .robot-container {
+            width: 90vw !important;
+            height: 60vh !important;
+            max-width: 400px !important;
+            max-height: 400px !important;
+          }
+        }
+        
+        /* Small Screens - Mobile (480px - 767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .clock {
+            font-size: 16px !important;
+            padding: 10px 14px !important;
+          }
+          
+          .animated-image-container {
+            width: 88vw !important;
+            max-width: 300px !important;
+            right: 4vw !important;
+          }
+          
+          .refresh-button, .demo-button {
+            font-size: 10px !important;
+            padding: 10px 14px !important;
+            right: 4vw !important;
+          }
+          
+          .cyber-font {
+            font-size: clamp(16px, 4.5vw, 24px) !important;
+          }
+          
+          .speech-bubble p {
+            font-size: 13px !important;
+          }
+          
+          .robot-container {
+            width: 85vw !important;
+            height: 65vh !important;
+            max-width: 450px !important;
+            max-height: 450px !important;
+          }
+        }
+        
+        /* Medium Screens - Tablet Portrait (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .clock {
+            font-size: 18px !important;
+            padding: 11px 15px !important;
+          }
+          
+          .animated-image-container {
+            width: 340px !important;
+            right: 20px !important;
+          }
+          
+          .refresh-button, .demo-button {
+            font-size: 11px !important;
+            padding: 12px 16px !important;
+            right: 20px !important;
+          }
+          
+          .cyber-font {
+            font-size: clamp(20px, 3vw, 32px) !important;
+          }
+          
+          .speech-bubble p {
+            font-size: 14px !important;
+          }
+          
+          .robot-container {
+            width: 70vw !important;
+            height: 70vh !important;
+            max-width: 600px !important;
+            max-height: 600px !important;
+          }
+        }
+        
+        /* Large Screens - Desktop (1024px - 1439px) */
+        @media (min-width: 1024px) and (max-width: 1439px) {
+          .animated-image-container {
+            width: 340px !important;
+            right: 24px !important;
+          }
+          
+          .refresh-button, .demo-button {
+            right: 32px !important;
+          }
+          
+          .cyber-font {
+            font-size: clamp(24px, 2.5vw, 40px) !important;
+          }
+          
+          .robot-container {
+            width: 60vw !important;
+            height: 70vh !important;
+            max-width: 700px !important;
+            max-height: 650px !important;
+          }
+        }
+        
+        /* Extra Large Screens - Large Desktop (1440px+) */
+        @media (min-width: 1440px) {
+          .cyber-font {
+            font-size: clamp(28px, 2vw, 48px) !important;
+          }
+          
+          .robot-container {
+            width: 850px !important;
+            height: 800px !important;
+          }
+        }
+        
+        /* Ultra Wide Screens (1920px+) */
+        @media (min-width: 1920px) {
+          .animated-image-container {
+            width: 380px !important;
+            right: 40px !important;
+          }
+          
+          .clock {
+            font-size: 22px !important;
+            padding: 14px 18px !important;
+          }
+          
+          .connection-status {
+            padding: 12px 20px !important;
+            font-size: 13px !important;
+          }
+          
+          .refresh-button, .demo-button {
+            font-size: 12px !important;
+            padding: 16px 22px !important;
+          }
+        }
+        
+        /* Landscape Orientation Adjustments */
+        @media (max-height: 500px) and (orientation: landscape) {
+          .clock {
+            font-size: 14px !important;
+            padding: 8px 12px !important;
+            top: 5px !important;
+            left: 5px !important;
+          }
+          
+          .connection-status {
+            top: 5px !important;
+            right: 5px !important;
+            padding: 8px 12px !important;
+            font-size: 10px !important;
+          }
+          
+          .animated-image-container {
+            top: 50px !important;
+            width: 250px !important;
+            right: 5px !important;
+          }
+          
+          .cyber-font {
+            font-size: clamp(16px, 3vh, 24px) !important;
+          }
+          
+          .robot-container {
+            width: 50vw !important;
+            height: 80vh !important;
+            max-width: 400px !important;
+            max-height: 350px !important;
+          }
+        }
+
+        /* BASE STYLES */
         .clock {
           position: fixed;
           top: 12px;
@@ -1101,8 +1436,8 @@ export const HeroSection = () => {
           color: #00ffff;
           font-family: 'Courier New', monospace;
           font-weight: bold;
-          font-size: 20px;
-          padding: 12px 16px;
+          font-size: clamp(14px, 2vw, 22px);
+          padding: clamp(8px, 1vw, 14px) clamp(12px, 1.5vw, 18px);
           border-radius: 12px;
           border: 2px solid rgba(0, 255, 255, 0.4);
           user-select: none;
@@ -1110,6 +1445,7 @@ export const HeroSection = () => {
           backdrop-filter: blur(25px);
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 255, 255, 0.2);
           text-shadow: 0 0 12px rgba(0, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8);
+          box-sizing: border-box;
         }
 
         .speech-bubble::after {
@@ -1149,15 +1485,14 @@ export const HeroSection = () => {
           font-style: normal;
         }
         
-        /* Enhanced Connection status indicators */
         .connection-status {
           position: fixed;
           top: 24px;
           right: 24px;
           z-index: 1000;
-          padding: 10px 18px;
+          padding: clamp(8px, 1vw, 12px) clamp(12px, 1.5vw, 20px);
           border-radius: 28px;
-          font-size: 12px;
+          font-size: clamp(9px, 1vw, 13px);
           font-family: 'Courier New', monospace;
           font-weight: bold;
           backdrop-filter: blur(25px);
@@ -1166,6 +1501,7 @@ export const HeroSection = () => {
           text-transform: uppercase;
           letter-spacing: 0.6px;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+          box-sizing: border-box;
         }
         
         .status-connected {
@@ -1195,7 +1531,6 @@ export const HeroSection = () => {
           50% { opacity: 0.7; transform: scale(1.02); }
         }
         
-        /* Enhanced Animated Image Container */
         .animated-image-container {
           position: fixed;
           top: 90px;
@@ -1205,6 +1540,8 @@ export const HeroSection = () => {
           perspective: 1200px;
           z-index: 9999;
           pointer-events: auto;
+          box-sizing: border-box;
+          max-width: 95vw;
         }
         
         .animated-image-container.entering {
@@ -1304,18 +1641,17 @@ export const HeroSection = () => {
           fill: white;
         }
         
-        /* Enhanced Button Styles */
         .refresh-button {
           position: fixed;
           bottom: 32px;
           right: 32px;
           z-index: 1000;
-          padding: 14px 20px;
+          padding: clamp(8px, 1vw, 16px) clamp(12px, 1.5vw, 22px);
           border-radius: 28px;
           background: rgba(20, 25, 25, 0.95);
           border: 2px solid rgba(0, 255, 255, 0.4);
           color: rgba(0, 255, 255, 0.95);
-          font-size: 11px;
+          font-size: clamp(9px, 1vw, 12px);
           font-family: 'Courier New', monospace;
           font-weight: bold;
           text-transform: uppercase;
@@ -1325,6 +1661,8 @@ export const HeroSection = () => {
           backdrop-filter: blur(25px);
           text-shadow: 0 0 8px rgba(0, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8);
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+          box-sizing: border-box;
+          max-width: 95vw;
         }
         
         .refresh-button:hover {
@@ -1339,12 +1677,12 @@ export const HeroSection = () => {
           bottom: 100px;
           right: 32px;
           z-index: 1000;
-          padding: 10px 16px;
+          padding: clamp(8px, 1vw, 16px) clamp(12px, 1.5vw, 22px);
           border-radius: 22px;
           background: rgba(25, 20, 25, 0.95);
           border: 2px solid rgba(255, 0, 255, 0.4);
           color: rgba(255, 0, 255, 0.95);
-          font-size: 11px;
+          font-size: clamp(9px, 1vw, 12px);
           font-family: 'Courier New', monospace;
           font-weight: bold;
           text-transform: uppercase;
@@ -1354,6 +1692,8 @@ export const HeroSection = () => {
           backdrop-filter: blur(25px);
           text-shadow: 0 0 8px rgba(255, 0, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8);
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+          box-sizing: border-box;
+          max-width: 95vw;
         }
         
         .demo-button:hover {
@@ -1362,9 +1702,64 @@ export const HeroSection = () => {
           transform: scale(1.08);
           box-shadow: 0 12px 40px rgba(255, 0, 255, 0.3), 0 0 20px rgba(255, 0, 255, 0.2);
         }
+
+        /* Responsive text sizing */
+        .speech-bubble p {
+          font-size: clamp(12px, 2vw, 16px) !important;
+          line-height: 1.4;
+        }
+
+        /* Responsive spacing for main container */
+        section {
+          padding: clamp(8px, 2vw, 24px);
+        }
+
+        /* Ensure iframe is responsive */
+        iframe {
+          width: 100% !important;
+          height: 100% !important;
+          max-width: 100%;
+          max-height: 100%;
+          border: none;
+          border-radius: 50%;
+        }
+
+        /* High DPI Screen Adjustments */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+          .clock, .connection-status {
+            border-width: 1px;
+          }
+        }
+
+        /* Reduced Motion Support */
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+
+        /* Dark Mode Adjustments */
+        @media (prefers-color-scheme: dark) {
+          .clock {
+            background: rgba(5, 10, 15, 0.98);
+            border-color: rgba(0, 255, 255, 0.6);
+          }
+        }
+
+        /* Apply robot container responsive class */
+        .robot-container {
+          width: 850px;
+          height: 800px;
+          max-width: 95vw;
+          max-height: 70vh;
+          transform: translateY(20px);
+          transform-origin: center center;
+          transition: transform 0.3s ease;
+        }
       `}</style>
 
-      {/* Enhanced Connection Status Indicator */}
       <div className={`connection-status ${
         connectionState.error ? 'status-error' :
         connectionState.isConnecting ? 'status-connecting' :
@@ -1375,7 +1770,6 @@ export const HeroSection = () => {
          connectionState.isConnected ? '● PICO ONLINE' : '◌ OFFLINE'}
       </div>
 
-      {/* Enhanced Animated Image Container */}
       {showImage && generatedImage && (
         <div className={`animated-image-container ${imageAnimationState}`}>
           <img
@@ -1418,7 +1812,6 @@ export const HeroSection = () => {
           cursor: 'none'
         }}
       >
-        {/* Enhanced Ambient Background Elements - ANIMATED */}
         <div className={`absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none transition-opacity duration-1000 ${
           connectionState.isConnected && (isListening || isConversing) ? 'opacity-35 sm:opacity-45' : 'opacity-20 sm:opacity-25'
         }`}
@@ -1429,7 +1822,6 @@ export const HeroSection = () => {
           msUserSelect: 'none',
           cursor: 'none'
         }}>
-          {/* Background grid */}
           <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none"
                style={{
                  backgroundImage: `
@@ -1443,7 +1835,6 @@ export const HeroSection = () => {
                }}>
           </div>
           
-          {/* Data streams */}
           <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none">
             {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 8 : 10)].map((_, i) => (
               <div
@@ -1464,7 +1855,6 @@ export const HeroSection = () => {
             ))}
           </div>
           
-          {/* Geometric shapes */}
           <div className="absolute inset-0 w-full h-full overflow-hidden select-none pointer-events-none">
             {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 3 : typeof window !== 'undefined' && window.innerWidth < 1024 ? 4 : 6)].map((_, i) => (
               <div
@@ -1498,7 +1888,6 @@ export const HeroSection = () => {
                transformOrigin: 'center center'
              }}>
           
-          {/* Enhanced Title - Only show when not connected or before first conversation */}
           {!connectionState.isConnected || !titleHasBeenHidden ? (
             <div className={`animate-fade-in-up transition-all duration-1000 mb-1 sm:mb-2 md:mb-3 overflow-hidden select-none ${
               connectionState.isConnected && isListening ? 'text-glow-enhanced' : ''
@@ -1525,7 +1914,6 @@ export const HeroSection = () => {
             </div>
           ) : null}
 
-          {/* Enhanced Speech Bubble Conversation Area - Only show when connected */}
           {connectionState.isConnected && titleHasBeenHidden && (
             <div className={`animate-fade-in-up transition-all duration-1000 mb-4 sm:mb-5 md:mb-6 overflow-visible ${
               isConversing ? 'opacity-100 translate-y-0' : 'opacity-100 translate-y-0'
@@ -1592,20 +1980,10 @@ export const HeroSection = () => {
             </div>
           )}
 
-          {/* Robot Avatar Container - BIGGER SIZE */}
-          <div className={`relative mb-1 sm:mb-2 md:mb-3 overflow-visible select-none ${
+          <div className={`relative mb-1 sm:mb-2 md:mb-3 overflow-visible select-none robot-container ${
             connectionState.isConnected && isConversing ? 'scale-105' : connectionState.isConnected && titleHasBeenHidden ? 'scale-102' : 'scale-100'
-          }`} style={{ 
-            width: '850px',
-            height: '800px',
-            maxWidth: '95vw',
-            maxHeight: '70vh',
-            transform: 'translateY(20px)',
-            transformOrigin: 'center center',
-            transition: 'transform 0.3s ease'
-          }}>
+          }`}>
             
-            {/* Enhanced Animated Background Layer Behind Spline Scene */}
             {connectionState.isConnected && (isListening || isConversing) && (
               <div 
                 className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
@@ -1619,7 +1997,6 @@ export const HeroSection = () => {
               />
             )}
 
-            {/* Enhanced Data Stream Effects */}
             {connectionState.isConnected && (isListening || isConversing) && (
               <div className="absolute inset-0 z-1 pointer-events-none overflow-hidden select-none">
                 {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 6 : 8)].map((_, i) => (
@@ -1647,7 +2024,6 @@ export const HeroSection = () => {
               </div>
             )}
             
-            {/* Spline 3D Robot Scene with iframe - BIGGER */}
             <div className="relative z-10 w-full h-full">
               {!splineError ? (
                 <>
@@ -1691,7 +2067,6 @@ export const HeroSection = () => {
               )}
             </div>
             
-            {/* Enhanced Audio Wave Visualization */}
             {connectionState.isConnected && (isListening || isConversing) && (
               <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 transform -translate-x-1/2 overflow-hidden select-none pointer-events-none z-20" 
                    style={{ 
@@ -1722,7 +2097,6 @@ export const HeroSection = () => {
             )}
           </div>
 
-          {/* Enhanced Status Indicator - Enhanced with Connection Info */}
           <div className={`flex items-center justify-center space-x-3 animate-fade-in-up transition-all duration-500 overflow-hidden select-none ${
             connectionState.isConnected && (isListening || isConversing) ? 'scale-105 sm:scale-108' : 'scale-100'
           }`} style={{ 
@@ -1766,7 +2140,6 @@ export const HeroSection = () => {
         </div>
       </section>
 
-      {/* Enhanced Manual Refresh Button (only show when connected) */}
       {connectionState.isConnected && (
         <button 
           onClick={requestNewGreeting}
@@ -1777,7 +2150,6 @@ export const HeroSection = () => {
         </button>
       )}
 
-      {/* Enhanced Demo Image Button for Testing */}
       <button 
         onClick={triggerDemoImage}
         className="demo-button"
