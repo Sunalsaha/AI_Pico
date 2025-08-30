@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+
 
 interface PicoMessage {
   type: string;
@@ -295,7 +295,7 @@ const EnhancedWeatherWidget = () => {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         /* COMPREHENSIVE RESPONSIVE DESIGN - ALL DEVICES */
         
         /* Extra Small Screens - Small Phones (320px - 479px) */
@@ -1222,7 +1222,7 @@ export const HeroSection = () => {
 
       <EnhancedWeatherWidget />
 
-      <style jsx>{`
+      <style>{`
         /* COMPREHENSIVE RESPONSIVE DESIGN FOR ALL COMPONENTS */
         
         /* Extra Small Screens - Small Phones (320px - 479px) */
