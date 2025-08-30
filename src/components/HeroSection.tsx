@@ -296,47 +296,82 @@ const EnhancedWeatherWidget = () => {
       </div>
 
       <style jsx>{`
-        /* COMPREHENSIVE RESPONSIVE DESIGN - MOBILE FIRST */
+        /* COMPREHENSIVE RESPONSIVE DESIGN - ALL DEVICES */
         
-        /* Base Mobile First - Extra Small Screens (320px - 479px) */
+        /* Extra Small Screens - Small Phones (320px - 479px) */
         @media (max-width: 479px) {
           .weather-widget-enhanced {
             width: 95vw !important;
             bottom: 8px !important;
             left: 2.5vw !important;
-            right: 2.5vw !important;
             max-width: 280px !important;
           }
           
           .weather-header {
-            padding: 1px 1px 2px !important;
+            padding: 8px 12px 2px !important;
           }
           
           .location-info {
-            font-size: 13px !important;
+            font-size: 12px !important;
           }
           
           .weather-main {
-            padding: 16px !important;
-            gap: 1px !important;
+            padding: 14px !important;
+            gap: 10px !important;
           }
           
           .temperature-main {
-            font-size: 32px !important;
+            font-size: 28px !important;
           }
           
           .weather-icon-large {
-            font-size: 32px !important;
+            font-size: 28px !important;
           }
           
           .rain-prediction {
-            font-size: 9px !important;
-            padding: 6px 8px !important;
+            font-size: 12px !important;
+            padding: 1px 1px !important;
           }
           
           .weather-tabs {
-            padding: 10px 8px !important;
+            padding: 0 8px !important;
             gap: 1px !important;
+          }
+          
+          .weather-tab {
+            font-size: 9px !important;
+            padding: 6px 3px !important;
+          }
+          
+          .daily-forecast, .hourly-forecast, .precipitation-chart {
+            padding: 8px 12px 12px !important;
+            max-height: 120px !important;
+          }
+          
+          .precipitation-bar {
+            width: 8px !important;
+          }
+        }
+        
+        /* Small Screens - Phones (480px - 767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .weather-widget-enhanced {
+            width: 90vw !important;
+            bottom: 10px !important;
+            left: 5vw !important;
+            max-width: 300px !important;
+          }
+          
+          .temperature-main {
+            font-size: 34px !important;
+          }
+          
+          .weather-icon-large {
+            font-size: 34px !important;
+          }
+          
+          .weather-tabs {
+            padding: 0 12px !important;
           }
           
           .weather-tab {
@@ -345,19 +380,16 @@ const EnhancedWeatherWidget = () => {
           }
           
           .daily-forecast, .hourly-forecast, .precipitation-chart {
-            padding: 10px 16px 16px !important;
             max-height: 140px !important;
           }
         }
         
-        /* Small Screens - Mobile (480px - 767px) */
-        @media (min-width: 480px) and (max-width: 767px) {
+        /* Medium Screens - Tablets (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
           .weather-widget-enhanced {
-            width: 92vw !important;
-            bottom: 10px !important;
-            left: 4vw !important;
-            right: 4vw !important;
-            max-width: 300px !important;
+            width: 320px !important;
+            bottom: 15px !important;
+            left: 15px !important;
           }
           
           .temperature-main {
@@ -368,27 +400,17 @@ const EnhancedWeatherWidget = () => {
             font-size: 36px !important;
           }
           
-          .weather-tabs {
-            padding: 0 12px !important;
-            gap: 2px !important;
-          }
-          
-          .weather-tab {
-            font-size: 11px !important;
-            padding: 10px 6px !important;
-          }
-          
           .daily-forecast, .hourly-forecast, .precipitation-chart {
             max-height: 160px !important;
           }
         }
         
-        /* Medium Screens - Tablet Portrait (768px - 1023px) */
-        @media (min-width: 768px) and (max-width: 1023px) {
+        /* Large Screens - Desktop (1024px - 1439px) */
+        @media (min-width: 1024px) and (max-width: 1439px) {
           .weather-widget-enhanced {
-            width: 320px !important;
-            bottom: 15px !important;
-            left: 15px !important;
+            width: 330px !important;
+            bottom: 10px !important;
+            left: 10px !important;
           }
           
           .temperature-main {
@@ -404,10 +426,10 @@ const EnhancedWeatherWidget = () => {
           }
         }
         
-        /* Large Screens - Desktop (1024px+) */
-        @media (min-width: 1024px) {
+        /* Extra Large Screens - Large Desktop (1440px+) */
+        @media (min-width: 1440px) {
           .weather-widget-enhanced {
-            width: 320px !important;
+            width: 340px !important;
             bottom: 10px !important;
             left: 10px !important;
           }
@@ -421,14 +443,14 @@ const EnhancedWeatherWidget = () => {
           }
           
           .daily-forecast, .hourly-forecast, .precipitation-chart {
-            max-height: 210px !important;
+            max-height: 200px !important;
           }
         }
         
         /* Ultra Wide Screens (1920px+) */
         @media (min-width: 1920px) {
           .weather-widget-enhanced {
-            width: 350px !important;
+            width: 360px !important;
             bottom: 20px !important;
             left: 20px !important;
           }
@@ -451,7 +473,7 @@ const EnhancedWeatherWidget = () => {
           }
           
           .daily-forecast, .hourly-forecast, .precipitation-chart {
-            max-height: 120px !important;
+            max-height: 100px !important;
           }
         }
 
@@ -498,7 +520,7 @@ const EnhancedWeatherWidget = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 5px 22px 2px;
+          padding: 12px 18px 2px;
           background: rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(10px);
         }
@@ -506,37 +528,35 @@ const EnhancedWeatherWidget = () => {
         .location-info {
           display: flex;
           align-items: center;
-          gap: 8px;
-          
-          font-size: 15px;
+          gap: 6px;
+          font-size: clamp(12px, 1.5vw, 15px);
           font-weight: 600;
           color: #ffffff;
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
         }
 
         .location-icon {
-          font-size: 14px;
-          
+          font-size: clamp(12px, 1.2vw, 14px);
           filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
         }
 
         .weather-main {
-          padding: 22px;
+          padding: clamp(14px, 2vw, 22px);
           display: flex;
           align-items: flex-start;
-          gap: 18px;
+          gap: clamp(10px, 1.5vw, 18px);
           background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
         }
 
         .weather-icon-large {
-          font-size: 40px;
-          min-width: 40px;
+          font-size: clamp(28px, 3vw, 40px);
+          min-width: clamp(28px, 3vw, 40px);
           line-height: 1;
           filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
         }
 
         .temperature-main {
-          font-size: 40px;
+          font-size: clamp(28px, 3.5vw, 40px);
           font-weight: 300;
           line-height: 1;
           color: #ffffff;
@@ -551,20 +571,20 @@ const EnhancedWeatherWidget = () => {
         .rain-prediction {
           display: flex;
           align-items: center;
-          gap: 7px;
-          font-size: 10px;
+          gap: 4px;
+          font-size: clamp(1px, 1vw, 1px);
           font-weight: 500;
-          background: rgba(30, 191, 255, 0.25);
+          background: rgba(12, 114, 117, 0.6);
           color: #ffffff;
-          padding: 8px 8px;
-          border-radius: 20px;
-          max-width: 79%;
+          padding: clamp(4px, 0.5vw, 8px) clamp(6px, 0.8vw, 10px);
+          border-radius: 12px;
+          max-width: 100%;
           border: 1px solid rgb(12, 114, 117);
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .rain-icon {
-          font-size: 14px;
+          font-size: clamp(12px, 1.2vw, 14px);
           flex-shrink: 0;
           filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
         }
@@ -574,13 +594,13 @@ const EnhancedWeatherWidget = () => {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          font-size: clamp(9px, 1vw, 10px);
+          font-size: clamp(6px, 0.9vw, 8px);
         }
 
         .weather-tabs {
           display: flex;
-          padding: 10px 22px;
-          gap: 3px;
+          padding: clamp(8px, 1vw, 12px) clamp(12px, 1.5vw, 22px);
+          gap: 2px;
           background: rgba(255, 255, 255, 0.03);
         }
 
@@ -589,8 +609,8 @@ const EnhancedWeatherWidget = () => {
           background: transparent;
           border: none;
           color: rgba(255, 255, 255, 0.7);
-          padding: 1px 1px;
-          font-size: 12px;
+          padding: clamp(6px, 0.8vw, 10px) clamp(3px, 0.5vw, 6px);
+          font-size: clamp(9px, 1vw, 12px);
           font-weight: 600;
           cursor: pointer;
           border-radius: 6px;
@@ -610,23 +630,23 @@ const EnhancedWeatherWidget = () => {
         }
 
         .precipitation-chart {
-          padding: 22px;
-          height: 130px;
+          padding: clamp(12px, 2vw, 22px);
+          height: clamp(100px, 12vw, 130px);
           background: rgba(3, 36, 46, 0.14);
           transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
         .daily-forecast {
-          padding: 12px 22px 22px;
-          max-height: 210px;
+          padding: clamp(8px, 1vw, 12px) clamp(12px, 1.5vw, 22px) clamp(12px, 1.5vw, 22px);
+          max-height: clamp(120px, 20vh, 200px);
           overflow-y: auto;
           background: rgba(255, 255, 255, 0.02);
           transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
         .hourly-forecast {
-          padding: 12px 22px 22px;
-          max-height: 210px;
+          padding: clamp(8px, 1vw, 12px) clamp(12px, 1.5vw, 22px) clamp(12px, 1.5vw, 22px);
+          max-height: clamp(120px, 20vh, 200px);
           overflow-y: auto;
           background: rgba(255, 255, 255, 0.02);
           transition: opacity 0.5s ease, transform 0.5s ease;
@@ -635,15 +655,15 @@ const EnhancedWeatherWidget = () => {
         .chart-container {
           display: flex;
           height: 100%;
-          gap: 14px;
+          gap: clamp(8px, 1.2vw, 14px);
         }
 
         .y-axis {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          width: 45px;
-          font-size: 11px;
+          width: clamp(30px, 4vw, 45px);
+          font-size: clamp(9px, 1vw, 11px);
           color: rgba(255, 255, 255, 0.8);
           font-weight: 500;
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -654,19 +674,19 @@ const EnhancedWeatherWidget = () => {
           display: flex;
           align-items: end;
           justify-content: space-between;
-          padding: 0 12px;
+          padding: 0 clamp(6px, 1vw, 12px);
         }
 
         .bar-container {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 10px;
-          min-width: 22px;
+          gap: clamp(6px, 1vw, 10px);
+          min-width: clamp(16px, 2vw, 22px);
         }
 
         .precipitation-bar {
-          width: 10px;
+          width: clamp(8px, 1.2vw, 10px);
           min-height: 6px;
           border-radius: 2px;
           transition: all 0.4s ease;
@@ -674,7 +694,7 @@ const EnhancedWeatherWidget = () => {
         }
 
         .day-label {
-          font-size: 11px;
+          font-size: clamp(9px, 1vw, 11px);
           color: rgba(255, 255, 255, 0.8);
           font-weight: 500;
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -684,7 +704,7 @@ const EnhancedWeatherWidget = () => {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 0;
+          padding: clamp(6px, 1vw, 10px) 0;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
@@ -693,15 +713,15 @@ const EnhancedWeatherWidget = () => {
         }
 
         .day {
-          font-size: 15px;
-          min-width: 65px;
+          font-size: clamp(12px, 1.5vw, 15px);
+          min-width: clamp(50px, 7vw, 65px);
           font-weight: 500;
           color: #ffffff;
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .daily-icon {
-          font-size: 22px;
+          font-size: clamp(18px, 2.2vw, 22px);
           flex: 1;
           text-align: center;
           filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
@@ -709,19 +729,21 @@ const EnhancedWeatherWidget = () => {
 
         .temps {
           display: flex;
-          gap: 10px;
-          min-width: 65px;
+          gap: clamp(6px, 1vw, 10px);
+          min-width: clamp(50px, 7vw, 65px);
           justify-content: end;
         }
 
         .high {
           font-weight: 600;
           color: #ffffff;
+          font-size: clamp(12px, 1.3vw, 14px);
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .low {
           color: rgba(255, 255, 255, 0.7);
+          font-size: clamp(12px, 1.3vw, 14px);
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
@@ -729,8 +751,8 @@ const EnhancedWeatherWidget = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 8px 0;
-          font-size: 13px;
+          padding: clamp(6px, 0.8vw, 8px) 0;
+          font-size: clamp(11px, 1.3vw, 13px);
           border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
@@ -739,14 +761,14 @@ const EnhancedWeatherWidget = () => {
         }
 
         .hour {
-          min-width: 45px;
+          min-width: clamp(35px, 5vw, 45px);
           font-weight: 500;
           color: #ffffff;
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .hourly-temp {
-          min-width: 35px;
+          min-width: clamp(25px, 4vw, 35px);
           text-align: center;
           font-weight: 500;
           color: #ffffff;
@@ -756,7 +778,7 @@ const EnhancedWeatherWidget = () => {
         .hourly-precip {
           color: #00d4ff;
           font-weight: 600;
-          min-width: 45px;
+          min-width: clamp(35px, 5vw, 45px);
           text-align: right;
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
@@ -773,11 +795,6 @@ const EnhancedWeatherWidget = () => {
           opacity: 0;
           transform: translateY(10px);
           pointer-events: none;
-        }
-
-        /* Universal responsive utilities */
-        .location-name {
-          font-size: clamp(13px, 1.5vw, 15px);
         }
       `}</style>
     </>
@@ -1208,50 +1225,86 @@ export const HeroSection = () => {
       <style jsx>{`
         /* COMPREHENSIVE RESPONSIVE DESIGN FOR ALL COMPONENTS */
         
-        /* Extra Small Screens (320px - 479px) */
+        /* Extra Small Screens - Small Phones (320px - 479px) */
         @media (max-width: 479px) {
           .clock {
-            font-size: 14px !important;
-            padding: 8px 12px !important;
-            top: 8px !important;
-            left: 8px !important;
+            font-size: 12px !important;
+            padding: 6px 10px !important;
+            top: 5px !important;
+            left: 5px !important;
           }
           
           .connection-status {
-            top: 16px !important;
-            right: 16px !important;
-            padding: 8px 12px !important;
-            font-size: 9px !important;
+            top: 10px !important;
+            right: 10px !important;
+            padding: 6px 10px !important;
+            font-size: 8px !important;
           }
           
           .animated-image-container {
             width: 85vw !important;
-            max-width: 280px !important;
+            max-width: 260px !important;
             right: 2.5vw !important;
-            top: 70px !important;
+            top: 60px !important;
           }
           
           .refresh-button {
-            font-size: 9px !important;
-            padding: 8px 12px !important;
-            bottom: 16px !important;
+            font-size: 8px !important;
+            padding: 6px 10px !important;
+            bottom: 12px !important;
             right: 2.5vw !important;
           }
           
           .demo-button {
-            font-size: 9px !important;
-            padding: 8px 12px !important;
-            bottom: 70px !important;
+            font-size: 8px !important;
+            padding: 6px 10px !important;
+            bottom: 60px !important;
             right: 2.5vw !important;
           }
           
           .cyber-font {
-            font-size: clamp(14px, 4vw, 20px) !important;
+            font-size: clamp(12px, 3.5vw, 18px) !important;
           }
           
           .speech-bubble {
-            max-width: 85vw !important;
+            max-width: 90vw !important;
             margin: 0 auto !important;
+            padding: 12px !important;
+          }
+          
+          .speech-bubble p {
+            font-size: 11px !important;
+          }
+          
+          .robot-container {
+            width: 85vw !important;
+            height: 55vh !important;
+            max-width: 350px !important;
+            max-height: 350px !important;
+          }
+        }
+        
+        /* Small Screens - Phones (480px - 767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .clock {
+            font-size: 14px !important;
+            padding: 8px 12px !important;
+          }
+          
+          .animated-image-container {
+            width: 85vw !important;
+            max-width: 290px !important;
+            right: 2.5vw !important;
+          }
+          
+          .refresh-button, .demo-button {
+            font-size: 9px !important;
+            padding: 8px 12px !important;
+            right: 2.5vw !important;
+          }
+          
+          .cyber-font {
+            font-size: clamp(14px, 4vw, 22px) !important;
           }
           
           .speech-bubble p {
@@ -1259,34 +1312,33 @@ export const HeroSection = () => {
           }
           
           .robot-container {
-            width: 90vw !important;
+            width: 80vw !important;
             height: 60vh !important;
             max-width: 400px !important;
             max-height: 400px !important;
           }
         }
         
-        /* Small Screens - Mobile (480px - 767px) */
-        @media (min-width: 480px) and (max-width: 767px) {
+        /* Medium Screens - Tablets (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
           .clock {
             font-size: 16px !important;
             padding: 10px 14px !important;
           }
           
           .animated-image-container {
-            width: 88vw !important;
-            max-width: 300px !important;
-            right: 4vw !important;
+            width: 320px !important;
+            right: 15px !important;
           }
           
           .refresh-button, .demo-button {
             font-size: 10px !important;
             padding: 10px 14px !important;
-            right: 4vw !important;
+            right: 15px !important;
           }
           
           .cyber-font {
-            font-size: clamp(16px, 4.5vw, 24px) !important;
+            font-size: clamp(18px, 2.8vw, 28px) !important;
           }
           
           .speech-bubble p {
@@ -1294,151 +1346,124 @@ export const HeroSection = () => {
           }
           
           .robot-container {
-            width: 85vw !important;
+            width: 65vw !important;
             height: 65vh !important;
-            max-width: 450px !important;
-            max-height: 450px !important;
-          }
-        }
-        
-        /* Medium Screens - Tablet Portrait (768px - 1023px) */
-        @media (min-width: 768px) and (max-width: 1023px) {
-          .clock {
-            font-size: 18px !important;
-            padding: 11px 15px !important;
-          }
-          
-          .animated-image-container {
-            width: 340px !important;
-            right: 20px !important;
-          }
-          
-          .refresh-button, .demo-button {
-            font-size: 11px !important;
-            padding: 12px 16px !important;
-            right: 20px !important;
-          }
-          
-          .cyber-font {
-            font-size: clamp(20px, 3vw, 32px) !important;
-          }
-          
-          .speech-bubble p {
-            font-size: 14px !important;
-          }
-          
-          .robot-container {
-            width: 70vw !important;
-            height: 70vh !important;
-            max-width: 600px !important;
-            max-height: 600px !important;
+            max-width: 550px !important;
+            max-height: 550px !important;
           }
         }
         
         /* Large Screens - Desktop (1024px - 1439px) */
         @media (min-width: 1024px) and (max-width: 1439px) {
           .animated-image-container {
-            width: 340px !important;
-            right: 24px !important;
+            width: 330px !important;
+            right: 20px !important;
           }
           
           .refresh-button, .demo-button {
-            right: 32px !important;
+            right: 25px !important;
           }
           
           .cyber-font {
-            font-size: clamp(24px, 2.5vw, 40px) !important;
+            font-size: clamp(22px, 2.2vw, 36px) !important;
           }
           
           .robot-container {
-            width: 60vw !important;
-            height: 70vh !important;
-            max-width: 700px !important;
-            max-height: 650px !important;
+            width: 55vw !important;
+            height: 65vh !important;
+            max-width: 650px !important;
+            max-height: 600px !important;
           }
         }
         
         /* Extra Large Screens - Large Desktop (1440px+) */
         @media (min-width: 1440px) {
           .cyber-font {
-            font-size: clamp(28px, 2vw, 48px) !important;
+            font-size: clamp(26px, 1.8vw, 42px) !important;
           }
           
           .robot-container {
-            width: 850px !important;
-            height: 800px !important;
+            width: 50vw !important;
+            height: 70vh !important;
+            max-width: 750px !important;
+            max-height: 700px !important;
           }
         }
         
         /* Ultra Wide Screens (1920px+) */
         @media (min-width: 1920px) {
           .animated-image-container {
-            width: 380px !important;
-            right: 40px !important;
+            width: 360px !important;
+            right: 30px !important;
           }
           
           .clock {
-            font-size: 22px !important;
-            padding: 14px 18px !important;
+            font-size: 20px !important;
+            padding: 12px 16px !important;
           }
           
           .connection-status {
-            padding: 12px 20px !important;
-            font-size: 13px !important;
+            padding: 10px 18px !important;
+            font-size: 12px !important;
           }
           
           .refresh-button, .demo-button {
-            font-size: 12px !important;
-            padding: 16px 22px !important;
+            font-size: 11px !important;
+            padding: 14px 20px !important;
+          }
+          
+          .robot-container {
+            width: 800px !important;
+            height: 750px !important;
           }
         }
         
         /* Landscape Orientation Adjustments */
         @media (max-height: 500px) and (orientation: landscape) {
           .clock {
-            font-size: 14px !important;
-            padding: 8px 12px !important;
-            top: 5px !important;
-            left: 5px !important;
+            font-size: 12px !important;
+            padding: 6px 10px !important;
+            top: 3px !important;
+            left: 3px !important;
           }
           
           .connection-status {
-            top: 5px !important;
-            right: 5px !important;
-            padding: 8px 12px !important;
-            font-size: 10px !important;
+            top: 3px !important;
+            right: 3px !important;
+            padding: 6px 10px !important;
+            font-size: 9px !important;
           }
           
           .animated-image-container {
-            top: 50px !important;
-            width: 250px !important;
-            right: 5px !important;
+            top: 40px !important;
+            width: 220px !important;
+            right: 3px !important;
           }
           
           .cyber-font {
-            font-size: clamp(16px, 3vh, 24px) !important;
+            font-size: clamp(14px, 2.5vh, 20px) !important;
           }
           
           .robot-container {
-            width: 50vw !important;
-            height: 80vh !important;
-            max-width: 400px !important;
-            max-height: 350px !important;
+            width: 45vw !important;
+            height: 75vh !important;
+            max-width: 350px !important;
+            max-height: 300px !important;
           }
         }
 
-        /* BASE STYLES */
+        /* BASE STYLES WITH FLUID SIZING */
         .clock {
           position: fixed;
-          top: 12px;
-          left: 12px;
+          top: 10px;
+          left: 10px;
           background: rgba(20, 20, 25, 0.98);
           color: #00ffff;
           font-family: 'Courier New', monospace;
           font-weight: bold;
-          font-size: clamp(14px, 2vw, 22px);
-          padding: clamp(8px, 1vw, 14px) clamp(12px, 1.5vw, 18px);
-          border-radius: 12px;
+          font-size: clamp(12px, 1.5vw, 20px);
+          padding: clamp(6px, 0.8vw, 12px) clamp(10px, 1.2vw, 16px);
+          border-radius: clamp(8px, 1vw, 12px);
           border: 2px solid rgba(0, 255, 255, 0.4);
           user-select: none;
           z-index: 1100;
@@ -1487,12 +1512,12 @@ export const HeroSection = () => {
         
         .connection-status {
           position: fixed;
-          top: 24px;
-          right: 24px;
+          top: 20px;
+          right: 20px;
           z-index: 1000;
-          padding: clamp(8px, 1vw, 12px) clamp(12px, 1.5vw, 20px);
-          border-radius: 28px;
-          font-size: clamp(9px, 1vw, 13px);
+          padding: clamp(6px, 0.8vw, 10px) clamp(10px, 1.2vw, 18px);
+          border-radius: clamp(20px, 2.5vw, 28px);
+          font-size: clamp(8px, 0.9vw, 12px);
           font-family: 'Courier New', monospace;
           font-weight: bold;
           backdrop-filter: blur(25px);
@@ -1502,6 +1527,7 @@ export const HeroSection = () => {
           letter-spacing: 0.6px;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
           box-sizing: border-box;
+          max-width: 95vw;
         }
         
         .status-connected {
@@ -1533,9 +1559,9 @@ export const HeroSection = () => {
         
         .animated-image-container {
           position: fixed;
-          top: 90px;
-          right: 24px;
-          width: 340px;
+          top: 80px;
+          right: 20px;
+          width: clamp(260px, 25vw, 340px);
           height: auto;
           perspective: 1200px;
           z-index: 9999;
@@ -1603,17 +1629,17 @@ export const HeroSection = () => {
         .animated-image {
           width: 100%;
           height: auto;
-          border-radius: 16px;
+          border-radius: clamp(12px, 1.5vw, 16px);
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.1);
           position: relative;
         }
         
         .download-icon {
           position: absolute;
-          top: 12px;
-          right: 12px;
-          width: 36px;
-          height: 36px;
+          top: clamp(8px, 1vw, 12px);
+          right: clamp(8px, 1vw, 12px);
+          width: clamp(28px, 3vw, 36px);
+          height: clamp(28px, 3vw, 36px);
           cursor: pointer;
           background: rgba(0, 0, 0, 0.8);
           border-radius: 50%;
@@ -1636,22 +1662,22 @@ export const HeroSection = () => {
         }
         
         .download-icon svg {
-          width: 20px;
-          height: 20px;
+          width: clamp(16px, 2vw, 20px);
+          height: clamp(16px, 2vw, 20px);
           fill: white;
         }
         
         .refresh-button {
           position: fixed;
-          bottom: 32px;
-          right: 32px;
+          bottom: clamp(20px, 3vw, 32px);
+          right: clamp(20px, 3vw, 32px);
           z-index: 1000;
-          padding: clamp(8px, 1vw, 16px) clamp(12px, 1.5vw, 22px);
-          border-radius: 28px;
+          padding: clamp(6px, 0.8vw, 14px) clamp(10px, 1.2vw, 20px);
+          border-radius: clamp(20px, 2.5vw, 28px);
           background: rgba(20, 25, 25, 0.95);
           border: 2px solid rgba(0, 255, 255, 0.4);
           color: rgba(0, 255, 255, 0.95);
-          font-size: clamp(9px, 1vw, 12px);
+          font-size: clamp(8px, 0.9vw, 11px);
           font-family: 'Courier New', monospace;
           font-weight: bold;
           text-transform: uppercase;
@@ -1674,15 +1700,15 @@ export const HeroSection = () => {
         
         .demo-button {
           position: fixed;
-          bottom: 100px;
-          right: 32px;
+          bottom: clamp(70px, 8vw, 100px);
+          right: clamp(20px, 3vw, 32px);
           z-index: 1000;
-          padding: clamp(8px, 1vw, 16px) clamp(12px, 1.5vw, 22px);
-          border-radius: 22px;
+          padding: clamp(6px, 0.8vw, 10px) clamp(10px, 1.2vw, 16px);
+          border-radius: clamp(16px, 2vw, 22px);
           background: rgba(25, 20, 25, 0.95);
           border: 2px solid rgba(255, 0, 255, 0.4);
           color: rgba(255, 0, 255, 0.95);
-          font-size: clamp(9px, 1vw, 12px);
+          font-size: clamp(8px, 0.9vw, 11px);
           font-family: 'Courier New', monospace;
           font-weight: bold;
           text-transform: uppercase;
@@ -1705,13 +1731,13 @@ export const HeroSection = () => {
 
         /* Responsive text sizing */
         .speech-bubble p {
-          font-size: clamp(12px, 2vw, 16px) !important;
+          font-size: clamp(11px, 1.3vw, 15px) !important;
           line-height: 1.4;
         }
 
         /* Responsive spacing for main container */
         section {
-          padding: clamp(8px, 2vw, 24px);
+          padding: clamp(6px, 1.5vw, 20px);
         }
 
         /* Ensure iframe is responsive */
@@ -1748,15 +1774,45 @@ export const HeroSection = () => {
           }
         }
 
-        /* Apply robot container responsive class */
+        /* Robot container responsive class */
         .robot-container {
-          width: 850px;
-          height: 800px;
+          width: clamp(350px, 45vw, 800px);
+          height: clamp(350px, 40vh, 750px);
           max-width: 95vw;
           max-height: 70vh;
           transform: translateY(20px);
           transform-origin: center center;
           transition: transform 0.3s ease;
+        }
+
+        /* Additional animation keyframes */
+        @keyframes gridMove {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(70px, 70px); }
+        }
+
+        @keyframes dataStream {
+          0% { transform: translateY(-100vh); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        @keyframes geometricFloat {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          25% { transform: translateY(-10px) rotate(90deg); }
+          50% { transform: translateY(0px) rotate(180deg); }
+          75% { transform: translateY(10px) rotate(270deg); }
+        }
+
+        @keyframes floating {
+          0%, 100% { transform: scale(1.3) translateY(0px); }
+          50% { transform: scale(1.35) translateY(-5px); }
+        }
+
+        @keyframes animate-float {
+          0%, 100% { transform: translateY(0px); opacity: 0.7; }
+          50% { transform: translateY(-20px); opacity: 1; }
         }
       `}</style>
 
